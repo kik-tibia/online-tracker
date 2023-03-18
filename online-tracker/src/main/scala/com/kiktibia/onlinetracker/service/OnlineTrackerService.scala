@@ -3,10 +3,12 @@ package com.kiktibia.onlinetracker.service
 import cats.effect.IO
 import com.kiktibia.onlinetracker.repo.OnlineTrackerRepo
 import com.kiktibia.onlinetracker.tibiadata.TibiaDataClient
+import com.typesafe.scalalogging.StrictLogging
 
-class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataClient) {
+class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataClient) extends StrictLogging {
 
   def doSomeStuff(): IO[Unit] = {
+    logger.info("Doing stuff")
     for {
       w <- tibiaDataClient.getWorld("Nefera")
       c <- tibiaDataClient.getCharacter("Kikaro")

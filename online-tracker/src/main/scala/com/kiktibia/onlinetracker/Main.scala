@@ -4,13 +4,14 @@ import cats.effect.*
 import com.kiktibia.onlinetracker.repo.OnlineTrackerRepoImpl
 import com.kiktibia.onlinetracker.service.OnlineTrackerService
 import com.kiktibia.onlinetracker.tibiadata.{TibiaDataClient, TibiaDataClientImpl}
+import com.typesafe.scalalogging.StrictLogging
 import fs2.Stream
 import natchez.Trace.Implicits.noop
 import skunk.Session
 
 import scala.concurrent.duration.*
 
-object Main extends IOApp {
+object Main extends IOApp with StrictLogging {
 
   // TODO read from config
   val session: Resource[IO, Session[IO]] =
@@ -29,9 +30,11 @@ object Main extends IOApp {
         val tibiaDataClient = new TibiaDataClientImpl(client)
         val service = new OnlineTrackerService(repo, tibiaDataClient)
 
-        // TODO add error handling
         Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
           service.doSomeStuff()
+            .handleError { e =>
+            logger.warn(e.getMessage)
+          }
         }.compile.drain.map(_ => ExitCode.Success)
       }
     }
