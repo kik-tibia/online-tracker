@@ -3,20 +3,26 @@ package com.kiktibia.onlinetracker.repo
 import cats.effect.IO
 import skunk.*
 import skunk.codec.all.*
-import skunk.implicits.sql
+import skunk.implicits.{sql, toIdOps}
 
 import java.time.OffsetDateTime
 
 case class CharacterRow(id: Option[Long], name: String, created: OffsetDateTime)
+
 case class CharacterNameHistoryRow(id: Option[Long], characterId: Long, name: String, fromDate: OffsetDateTime, toDate: OffsetDateTime)
+
 case class CurrentlyOnlineRow(id: Option[Long], characterId: Long, worldId: Long, loginTime: Long)
 
+case class OnlineUseful(id: Long, name: String, loginTime: Long)
+
+case class WorldSaveTimeRow(id: Option[Long], worldId: Long, sequenceId: Long, saveTime: OffsetDateTime)
+
 trait OnlineTrackerRepo {
-  def createCharacter(character: CharacterRow): IO[Unit]
+  def createCharacterIfNotExists(character: CharacterRow): IO[Unit]
 
   def getAllCharacters: IO[List[CharacterRow]]
 
-  def getAllOnline: IO[List[CurrentlyOnlineRow]]
+  def getAllOnline(world: String): IO[List[CurrentlyOnlineRow]]
 }
 
 class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo {
@@ -36,14 +42,15 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo {
       case id ~ characterId ~ worldId ~ loginTime => CurrentlyOnlineRow(Some(id), characterId, worldId, loginTime)
     }
 
-  override def createCharacter(character: CharacterRow): IO[Unit] = {
+  override def createCharacterIfNotExists(character: CharacterRow): IO[Unit] = {
     val q: Command[CharacterRow] =
       sql"""
            INSERT INTO character(name, created)
            VALUES $characterEncoder
+           ON CONFLICT DO NOTHING
       """
         .command
-    session.prepare(q).map(_.execute(character)).void
+    session.prepare(q).flatMap(_.execute(character)).void
   }
 
   override def getAllCharacters: IO[List[CharacterRow]] = {
@@ -56,14 +63,20 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo {
     session.execute(q)
   }
 
-  override def getAllOnline: IO[List[CurrentlyOnlineRow]] = {
-    val q: Query[Void, CurrentlyOnlineRow] =
+  override def getAllOnline(world: String): IO[List[CurrentlyOnlineRow]] = {
+    val q: Query[String, CurrentlyOnlineRow] =
       sql"""
-           SELECT id, character_id, login_time
-           FROM online
+           SELECT currently_online.id, currently_online.character_id, currently_online.world_id, currently_online.login_time
+           FROM currently_online join world
+           ON currently_online.world_id = world.id
+           WHERE world.name = $varchar
       """
         .query(onlineDecoder)
-    session.execute(q)
+
+    prepareToList(q, world)
   }
+
+  private def prepareToList[A, B](q: Query[A, B], args: A): IO[List[B]] =
+    session.prepare(q).flatMap(_.stream(args, 64).compile.toList)
 
 }

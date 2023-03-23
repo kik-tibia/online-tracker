@@ -6,7 +6,7 @@ CREATE DATABASE test1;
 
 CREATE TABLE character (
   id BIGSERIAL PRIMARY KEY,
-  name VARCHAR,
+  name VARCHAR UNIQUE,
   created TIMESTAMPTZ
 );
 

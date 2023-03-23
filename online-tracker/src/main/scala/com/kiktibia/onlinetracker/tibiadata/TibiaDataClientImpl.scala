@@ -22,13 +22,15 @@ trait TibiaDataClient {
 
 class TibiaDataClientImpl(client: Client[IO]) extends TibiaDataClient with TibiaDataDecoders {
 
+  private val apiRoot = uri"https://api.tibiadata.com/v3"
+
   def getWorld(world: String): IO[WorldResponse] = {
-    val target = uri"https://api.tibiadata.com/v3/world" / world
+    val target = apiRoot / "world" / world
     client.expect(target)(jsonOf[IO, WorldResponse])
   }
 
   def getCharacter(name: String): IO[CharacterResponse] = {
-    val target = uri"https://api.tibiadata.com/v3/character" / name
+    val target = apiRoot / "character" / name
     client.expect(target)(jsonOf[IO, CharacterResponse])
   }
 
