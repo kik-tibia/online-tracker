@@ -4,7 +4,7 @@ import cats.effect.IO
 import com.kiktibia.onlinetracker.repo.Model.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
-import skunk.{Command, Decoder, Encoder, Query, Session, Void, ~}
+import skunk.*
 
 import java.time.OffsetDateTime
 
@@ -39,7 +39,7 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with
            FROM currently_online
            JOIN character ON currently_online.character_id = character.id
            WHERE currently_online.world_id = $int8
-        """
+      """
         .query(onlineNameTimeDecoder)
 
     prepareToList(q, worldId)
@@ -59,33 +59,33 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with
   override def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long] = {
     val q: Query[WorldSaveTimeRow, Long] =
       sql"""
-        INSERT INTO world_save_time(world_id, sequence_id, time)
-        VALUES $worldSaveTimeEncoder
-        RETURNING id
+           INSERT INTO world_save_time(world_id, sequence_id, time)
+           VALUES $worldSaveTimeEncoder
+           RETURNING id
       """
         .query(int8)
     session.unique(q, w)
   }
 
   override def createCharacterIfNotExists(character: CharacterRow): IO[Unit] = {
-    val q: Command[CharacterRow] =
+    val c: Command[CharacterRow] =
       sql"""
            INSERT INTO character(name, created)
            VALUES $characterEncoder
            ON CONFLICT DO NOTHING
       """
         .command
-    session.prepare(q).flatMap(_.execute(character)).void
+    session.prepare(c).flatMap(_.execute(character)).void
   }
 
   override def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit] = {
     val c: Command[String ~ Long ~ Long] =
       sql"""
-          INSERT INTO currently_online(character_id, world_id, login_time)
-          VALUES (
-            (SELECT id FROM character WHERE name = $varchar),
-            $int8,
-            $int8)
+           INSERT INTO currently_online(character_id, world_id, login_time)
+           VALUES (
+             (SELECT id FROM character WHERE name = $varchar),
+             $int8,
+             $int8)
       """
         .command
     session.prepare(c).flatMap(_.execute(online.name ~ worldId ~ online.loginTime)).void
@@ -94,11 +94,11 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with
   override def deleteOnline(name: String, worldId: Long): IO[Unit] = {
     val c: Command[String ~ Long] =
       sql"""
-          DELETE FROM currently_online O
-          USING character C
-          WHERE O.character_id = C.id
-          AND C.name = $varchar
-          AND O.world_id = $int8
+           DELETE FROM currently_online O
+           USING character C
+           WHERE O.character_id = C.id
+           AND C.name = $varchar
+           AND O.world_id = $int8
       """
         .command
     session.prepare(c).flatMap(_.execute(name ~ worldId)).void
