@@ -60,6 +60,7 @@ INSERT INTO world
   (id, name) VALUES
   (DEFAULT, 'Testworld1'),
   (DEFAULT, 'Testworld2');
+  (DEFAULT, 'Nefera');
 
 INSERT INTO world_save_time
   (id, world_id, sequence_id, time) VALUES

@@ -31,7 +31,7 @@ object Main extends IOApp with StrictLogging {
         val service = new OnlineTrackerService(repo, tibiaDataClient)
 
         Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
-          service.doSomeStuff()
+          service.updateDataForWorld("Nefera")
             .handleError { e =>
             logger.warn(e.getMessage)
           }
