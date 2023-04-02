@@ -8,15 +8,21 @@ import java.time.OffsetDateTime
 trait OnlineTrackerRepo {
   def getWorld(name: String): IO[WorldRow]
 
-  def getLatestSaveTime(worldId: Long): IO[OffsetDateTime]
+  def getLatestSaveTime(worldId: Long): IO[Option[OffsetDateTime]]
 
   def getAllOnline(worldId: Long): IO[List[OnlineNameTime]]
 
-  def getMaxSequenceId(worldId: Long): IO[Long]
+  def getMaxSequenceId(worldId: Long): IO[Option[Long]]
 
   def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long]
 
-  def createCharacterIfNotExists(character: CharacterRow): IO[Unit]
+  def insertCharacterNameHistory(characterNameHistoryRow: CharacterNameHistoryRow): IO[Unit]
+
+  def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): IO[Unit]
+
+  def insertCharacter(character: CharacterRow): IO[Unit]
+
+  def getCharacter(name: String): IO[Option[CharacterRow]]
 
   def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit]
 

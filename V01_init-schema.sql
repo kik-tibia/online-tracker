@@ -7,7 +7,8 @@ CREATE DATABASE test1;
 CREATE TABLE character (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR UNIQUE,
-  created TIMESTAMPTZ
+  created TIMESTAMPTZ,
+  current_name_since TIMESTAMPTZ
 );
 
 CREATE TABLE character_name_history (
@@ -48,9 +49,9 @@ CREATE TABLE online_history (
 -- Insert some test data
 
 INSERT INTO character
-  (id, name, created) VALUES
-  (DEFAULT, 'Test One', NOW() - INTERVAL '48 hours'),
-  (DEFAULT, 'Test Two', NOW() - INTERVAL '8 hours');
+  (id, name, created, current_name_since) VALUES
+  (DEFAULT, 'Test One', NOW() - INTERVAL '48 hours', NOW() - INTERVAL '48 hours'),
+  (DEFAULT, 'Test Two', NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours');
 
 INSERT INTO character_name_history
   (id, character_id, name, from_date, until_date) VALUES
@@ -59,7 +60,7 @@ INSERT INTO character_name_history
 INSERT INTO world
   (id, name) VALUES
   (DEFAULT, 'Testworld1'),
-  (DEFAULT, 'Testworld2');
+  (DEFAULT, 'Testworld2'),
   (DEFAULT, 'Nefera');
 
 INSERT INTO world_save_time
