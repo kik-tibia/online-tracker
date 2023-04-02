@@ -104,6 +104,19 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with
     session.prepare(c).flatMap(_.execute(name ~ worldId)).void
   }
 
+  override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit] = {
+    val c: Command[String ~ Long ~ Long] =
+      sql"""
+           INSERT INTO online_history(character_id, login_time, logout_time)
+           VALUES (
+             (SELECT id FROM character WHERE name = $varchar),
+             $int8,
+             $int8)
+      """
+        .command
+    session.prepare(c).flatMap(_.execute(name ~ loginTime ~ logoutTime)).void
+  }
+
   private def prepareToList[A, B](q: Query[A, B], args: A): IO[List[B]] =
     session.prepare(q).flatMap(_.stream(args, 64).compile.toList)
 

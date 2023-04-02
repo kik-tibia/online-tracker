@@ -54,6 +54,9 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
       _ <- IO.println(s"Removing ${loggedOff.length} characters from online list")
       _ <- IO.println(loggedOff.mkString(", "))
       _ <- loggedOff.map(i => repo.deleteOnline(i, worldId)).sequence
+
+      _ <- dbOnlineRows.filter(i => loggedOff.contains(i.name))
+        .map(i => repo.insertOnlineHistory(i.name, i.loginTime, saveTimeId)).sequence
     } yield IO.unit
   }
 

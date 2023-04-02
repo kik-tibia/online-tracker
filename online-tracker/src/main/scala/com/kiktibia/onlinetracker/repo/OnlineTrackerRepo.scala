@@ -21,4 +21,6 @@ trait OnlineTrackerRepo {
   def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit]
 
   def deleteOnline(name: String, worldId: Long): IO[Unit]
+
+  def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit]
 }
