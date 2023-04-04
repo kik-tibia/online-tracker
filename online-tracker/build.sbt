@@ -23,8 +23,11 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-literal" % "0.14.3"
 )
 
+libraryDependencies ++= Seq(
+  "org.typelevel" %% "log4cats-slf4j" % "2.5.0"
+)
+
 libraryDependencies += "org.tpolecat" %% "skunk-core" % "0.5.1"
 libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"

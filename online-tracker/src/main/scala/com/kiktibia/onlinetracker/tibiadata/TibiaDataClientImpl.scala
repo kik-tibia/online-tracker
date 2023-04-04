@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.tibiadata.response.*
-import com.typesafe.scalalogging.StrictLogging
 import io.circe.generic.auto.*
 import io.circe.Decoder
 import org.http4s.Status
@@ -16,14 +15,11 @@ import org.http4s.implicits.*
 
 import scala.concurrent.duration.*
 
-object TibiaDataClient extends StrictLogging {
-  private val retryPolicy: RetryPolicy[IO] = (_, result, attempts) => {
-    if (attempts > 3) None
+object TibiaDataClient {
+  private val retryPolicy: RetryPolicy[IO] = (_, result, unsuccessfulAttempts) => {
+    if (unsuccessfulAttempts > 2) None
     else if (result.exists(_.status == Status.Ok)) None
-    else {
-      logger.info("Retrying request")
-      1.second.some
-    }
+    else 1.second.some
   }
 
   val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withRequestTimeout(10.seconds).resource

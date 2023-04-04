@@ -1,20 +1,23 @@
 package com.kiktibia.onlinetracker.service
 
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits.*
 import com.kiktibia.onlinetracker.repo.Model.*
 import com.kiktibia.onlinetracker.repo.OnlineTrackerRepo
 import com.kiktibia.onlinetracker.tibiadata.TibiaDataClient
 import com.kiktibia.onlinetracker.tibiadata.response.*
-import com.typesafe.scalalogging.StrictLogging
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataClient) extends StrictLogging {
+class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataClient) {
+
+  implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 
   def updateDataForWorld(world: String): IO[Unit] = {
     for {
-      _ <- IO(logger.info("--- start ---"))
+      _ <- Logger[IO].info("--- start ---")
       worldResponse <- tibiaDataClient.getWorld(world)
       tdTime = OffsetDateTime.parse(worldResponse.information.timestamp)
 
@@ -22,15 +25,15 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
       latestSaveTime <- repo.getLatestSaveTime(worldId)
 
       _ <- if (!latestSaveTime.contains(tdTime)) updateOnlineList(worldId, worldResponse, tdTime)
-      else IO.println("Not proceeding, received cached response from TibiaData")
+      else Logger[IO].info("Not proceeding, received cached response from TibiaData")
 
-      _ <- IO(logger.info("--- end ---"))
+      _ <- Logger[IO].info("--- end ---")
     } yield IO.unit
   }
 
   private def updateOnlineList(worldId: Long, worldResponse: WorldResponse, time: OffsetDateTime): IO[Unit] = {
     for {
-      _ <- IO.println(s"Updating online list for $time")
+      _ <- Logger[IO].info(s"Updating online list for $time")
       dbOnlineRows <- repo.getAllOnline(worldId)
 
       dbOnlineNames = dbOnlineRows.map(_.name)
@@ -41,16 +44,12 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
 
       lastSequenceId <- repo.getMaxSequenceId(worldId).map(_.getOrElse(0L))
       saveTimeId <- repo.insertWorldSaveTime(WorldSaveTimeRow(None, worldId, lastSequenceId + 1, time))
-      _ <- IO.println(s"Inserted save time row with ID $saveTimeId and sequence ID ${lastSequenceId + 1}")
 
-      _ <- IO.println(s"Inserting ${loggedOn.length} characters to online list")
-      _ <- IO.println(loggedOn.mkString(", "))
-
+      _ <- Logger[IO].info(s"Inserting ${loggedOn.length} characters: ${loggedOn.mkString(", ")}")
       _ <- loggedOn.map(i => checkIfCharacterExists(i, time)).sequence
       _ <- loggedOn.map(i => repo.insertOnline(OnlineNameTime(i, saveTimeId), worldId)).sequence
 
-      _ <- IO.println(s"Removing ${loggedOff.length} characters from online list")
-      _ <- IO.println(loggedOff.mkString(", "))
+      _ <- Logger[IO].info(s"Removing ${loggedOff.length} characters: ${loggedOff.mkString(", ")}")
       _ <- loggedOff.map(i => repo.deleteOnline(i, worldId)).sequence
 
       _ <- dbOnlineRows.filter(i => loggedOff.contains(i.name))
