@@ -2,21 +2,38 @@ package com.kiktibia.onlinetracker.tibiadata
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.syntax.all.*
 import com.kiktibia.onlinetracker.tibiadata.response.*
+import com.typesafe.scalalogging.StrictLogging
 import io.circe.generic.auto.*
 import io.circe.Decoder
+import org.http4s.Status
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.circe.*
 import org.http4s.client.Client
-import org.http4s.client.middleware.GZip
+import org.http4s.client.middleware.{GZip, Retry, RetryPolicy}
 import org.http4s.implicits.*
 
-object TibiaDataClient {
-  val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource.map(GZip()(_))
+import scala.concurrent.duration.*
+
+object TibiaDataClient extends StrictLogging {
+  private val retryPolicy: RetryPolicy[IO] = (_, result, attempts) => {
+    if (attempts > 3) None
+    else if (result.exists(_.status == Status.Ok)) None
+    else {
+      logger.info("Retrying request")
+      1.second.some
+    }
+  }
+
+  val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withRequestTimeout(10.seconds).resource
+    .map(GZip()(_))
+    .map(Retry[IO](retryPolicy)(_))
 }
 
 trait TibiaDataClient {
   def getWorld(world: String): IO[WorldResponse]
+
   def getCharacter(name: String): IO[CharacterResponse]
 }
 

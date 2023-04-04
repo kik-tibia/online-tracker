@@ -14,7 +14,7 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
 
   def updateDataForWorld(world: String): IO[Unit] = {
     for {
-      _ <- IO.println("--- start ---")
+      _ <- IO(logger.info("--- start ---"))
       worldResponse <- tibiaDataClient.getWorld(world)
       tdTime = OffsetDateTime.parse(worldResponse.information.timestamp)
 
@@ -24,7 +24,7 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
       _ <- if (!latestSaveTime.contains(tdTime)) updateOnlineList(worldId, worldResponse, tdTime)
       else IO.println("Not proceeding, received cached response from TibiaData")
 
-      _ <- IO.println("--- end ---")
+      _ <- IO(logger.info("--- end ---"))
     } yield IO.unit
   }
 
@@ -34,9 +34,7 @@ class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataCl
       dbOnlineRows <- repo.getAllOnline(worldId)
 
       dbOnlineNames = dbOnlineRows.map(_.name)
-      tdOnlineNames = worldResponse.worlds.world.online_players.map(_.name)
-      _ <- IO.println(s"dbOnlineNames length: ${dbOnlineNames.length}")
-      _ <- IO.println(s"tdOnlineNames length: ${tdOnlineNames.length}")
+      tdOnlineNames = worldResponse.worlds.world.online_players.getOrElse(Nil).map(_.name)
 
       loggedOff = dbOnlineNames.filterNot(i => tdOnlineNames.contains(i))
       loggedOn = tdOnlineNames.filterNot(i => dbOnlineNames.contains(i))

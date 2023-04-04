@@ -21,7 +21,7 @@ case class World(
   battleye_date: String,
   game_world_type: String,
   tournament_world_type: String,
-  online_players: List[OnlinePlayers]
+  online_players: Option[List[OnlinePlayers]]
 )
 case class Worlds(
   world: World
