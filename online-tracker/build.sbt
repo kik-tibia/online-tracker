@@ -7,6 +7,11 @@ lazy val root = (project in file("."))
     name := "online-tracker"
   )
 
+enablePlugins(DockerPlugin)
+enablePlugins(JavaAppPackaging)
+dockerExposedPorts += 443
+dockerAlias := DockerAlias(None, None, "online-tracker", None)
+
 scalacOptions ++= Seq("-Xmax-inlines", "64") // https://github.com/circe/circe/issues/1760
 
 val http4sVersion = "1.0.0-M38"
@@ -31,3 +36,5 @@ libraryDependencies += "org.tpolecat" %% "skunk-core" % "0.5.1"
 libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
+
+libraryDependencies += "is.cir" %% "ciris" % "3.1.0"

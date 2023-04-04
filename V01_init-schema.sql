@@ -1,8 +1,6 @@
-DROP DATABASE test1;
+CREATE DATABASE online_tracker;
 
-CREATE DATABASE test1;
-
-\c test1;
+\c online_tracker;
 
 CREATE TABLE character (
   id BIGSERIAL PRIMARY KEY,
