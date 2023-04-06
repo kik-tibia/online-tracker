@@ -1,4 +1,4 @@
-package com.kiktibia.onlinetracker.tibiadata.response
+package com.kiktibia.onlinetracker.tracker.tibiadata.response
 
 case class Information(
   api_version: Double,

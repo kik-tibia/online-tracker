@@ -1,11 +1,11 @@
-package com.kiktibia.onlinetracker
+package com.kiktibia.onlinetracker.tracker
 
 import cats.effect.*
 import cats.syntax.all.*
-import ciris.*
-import com.kiktibia.onlinetracker.repo.OnlineTrackerRepoImpl
-import com.kiktibia.onlinetracker.service.OnlineTrackerService
-import com.kiktibia.onlinetracker.tibiadata.{TibiaDataClient, TibiaDataClientImpl}
+import com.kiktibia.onlinetracker.config.{AppConfig, DatabaseConfig}
+import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerRepoImpl
+import com.kiktibia.onlinetracker.tracker.service.OnlineTrackerService
+import com.kiktibia.onlinetracker.tracker.tibiadata.{TibiaDataClient, TibiaDataClientImpl}
 import fs2.Stream
 import natchez.Trace.Implicits.noop
 import org.typelevel.log4cats.Logger
@@ -18,21 +18,8 @@ object Main extends IOApp {
 
   implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 
-  final case class DatabaseConfig(
-    host: String, port: Int, user: String, database: String, password: String
-  )
-
-  private val databaseConfig: ConfigValue[Effect, DatabaseConfig] =
-    (
-      env("DB_HOST").as[String],
-      env("DB_PORT").as[Int],
-      env("DB_USER").as[String],
-      env("DB_NAME").as[String],
-      env("DB_PASSWORD").as[String]
-    ).parMapN(DatabaseConfig.apply)
-
-  def run(args: List[String]): IO[ExitCode] = {
-    databaseConfig.load[IO].flatMap { cfg =>
+  override def run(args: List[String]): IO[ExitCode] = {
+    AppConfig.databaseConfig.load[IO].flatMap { cfg =>
       val session: Resource[IO, Session[IO]] =
         Session.single(
           host = cfg.host,

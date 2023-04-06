@@ -1,9 +1,9 @@
-package com.kiktibia.onlinetracker.tibiadata
+package com.kiktibia.onlinetracker.tracker.tibiadata
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
-import com.kiktibia.onlinetracker.tibiadata.response.*
+import com.kiktibia.onlinetracker.tracker.tibiadata.response.*
 import io.circe.generic.auto.*
 import io.circe.Decoder
 import org.http4s.Status

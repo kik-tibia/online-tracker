@@ -1,4 +1,4 @@
-package com.kiktibia.onlinetracker.repo
+package com.kiktibia.onlinetracker.tracker.repo
 
 import java.time.OffsetDateTime
 

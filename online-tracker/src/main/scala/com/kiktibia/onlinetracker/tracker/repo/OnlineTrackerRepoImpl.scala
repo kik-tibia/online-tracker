@@ -1,14 +1,15 @@
-package com.kiktibia.onlinetracker.repo
+package com.kiktibia.onlinetracker.tracker.repo
 
 import cats.effect.IO
-import com.kiktibia.onlinetracker.repo.Model.*
+import com.kiktibia.onlinetracker.repo.SkunkExtensions
+import com.kiktibia.onlinetracker.tracker.repo.Model.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
 import skunk.*
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with OnlineTrackerCodecs {
+class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo with OnlineTrackerCodecs with SkunkExtensions {
 
   override def getWorld(name: String): IO[WorldRow] = {
     val q: Query[String, WorldRow] =
@@ -148,8 +149,5 @@ class OnlineTrackerRepoImpl(session: Session[IO]) extends OnlineTrackerRepo with
         .command
     session.prepare(c).flatMap(_.execute(name ~ loginTime ~ logoutTime)).void
   }
-
-  private def prepareToList[A, B](q: Query[A, B], args: A): IO[List[B]] =
-    session.prepare(q).flatMap(_.stream(args, 64).compile.toList)
 
 }

@@ -1,7 +1,7 @@
-package com.kiktibia.onlinetracker.repo
+package com.kiktibia.onlinetracker.tracker.repo
 
 import cats.effect.IO
-import com.kiktibia.onlinetracker.repo.Model.*
+import com.kiktibia.onlinetracker.tracker.repo.Model.*
 
 import java.time.OffsetDateTime
 

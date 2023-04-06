@@ -1,11 +1,11 @@
-package com.kiktibia.onlinetracker.service
+package com.kiktibia.onlinetracker.tracker.service
 
 import cats.effect.{IO, Sync}
 import cats.implicits.*
-import com.kiktibia.onlinetracker.repo.Model.*
-import com.kiktibia.onlinetracker.repo.OnlineTrackerRepo
-import com.kiktibia.onlinetracker.tibiadata.TibiaDataClient
-import com.kiktibia.onlinetracker.tibiadata.response.*
+import com.kiktibia.onlinetracker.tracker.repo.Model.*
+import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerRepo
+import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataClient
+import com.kiktibia.onlinetracker.tracker.tibiadata.response.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 

@@ -1,6 +1,6 @@
-package com.kiktibia.onlinetracker.repo
+package com.kiktibia.onlinetracker.tracker.repo
 
-import com.kiktibia.onlinetracker.repo.Model.*
+import com.kiktibia.onlinetracker.tracker.repo.Model.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
 import skunk.{Decoder, Encoder, ~}

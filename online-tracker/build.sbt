@@ -11,6 +11,7 @@ enablePlugins(DockerPlugin)
 enablePlugins(JavaAppPackaging)
 dockerExposedPorts += 443
 dockerAlias := DockerAlias(None, None, "online-tracker", None)
+Compile / mainClass := Some("com.kiktibia.onlinetracker.tracker.Main")
 
 scalacOptions ++= Seq("-Xmax-inlines", "64") // https://github.com/circe/circe/issues/1760
 
