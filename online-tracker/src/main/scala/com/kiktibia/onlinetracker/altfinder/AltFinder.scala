@@ -32,7 +32,12 @@ object AltFinder extends IOApp {
         val service = new AltFinderService(repo)
         for {
           _ <- Logger[IO].info("Running alt finder")
-          _ <- service.printOnlineTimes("kikaro")
+          _ <- service.printOnlineTimes(List(
+            "kikaro",
+            "elder kikaro",
+            "kikarrow",
+            "goanna kendrick"
+          ))
         } yield ExitCode.Success
       }
     }
