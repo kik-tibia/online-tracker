@@ -25,12 +25,11 @@ class AltFinderRepoImpl(val session: Session[IO]) extends AltFinderRepo with Alt
     val q: Query[List[String], OnlineSegment] =
       sql"""
           SELECT o3.character_id, o3.login_time, o3.logout_time
-          FROM online_history o1 CROSS JOIN online_history o2
+          FROM online_history o1
+          JOIN online_history o2 ON o1.login_time = o2.logout_time
           JOIN character ON o1.character_id = character.id
           JOIN online_history o3 ON o2.character_id = o3.character_id
           WHERE LOWER(character.name) IN (${varchar.values.list(characterNames.length)})
-          AND o1.login_time >= o2.logout_time
-          AND o1.login_time < o2.logout_time + 2;
      """
         .query(onlineSegmentDecoder)
     prepareToList(q, characterNames.map(_.toLowerCase))
