@@ -15,6 +15,8 @@ import scala.concurrent.duration.*
 
 object AltFinder extends IOApp {
 
+  implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
+
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>
       val session: Resource[IO, Session[IO]] =
@@ -29,7 +31,8 @@ object AltFinder extends IOApp {
         val repo = new AltFinderRepoImpl(s)
         val service = new AltFinderService(repo)
         for {
-          _ <- service.printOnlineTimes("Kikaro")
+          _ <- Logger[IO].info("Running alt finder")
+          _ <- service.printOnlineTimes("kikaro")
         } yield ExitCode.Success
       }
     }

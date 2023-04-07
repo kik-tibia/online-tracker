@@ -7,7 +7,7 @@ import skunk.{Decoder, Encoder, ~}
 
 trait AltFinderCodecs {
   val onlineSegmentDecoder: Decoder[OnlineSegment] =
-    (int8 ~ int8).map {
-      case start ~ end => OnlineSegment(start, end)
+    (int8 ~ int8 ~ int8).map {
+      case id ~ start ~ end => OnlineSegment(id, start, end)
     }
 }
