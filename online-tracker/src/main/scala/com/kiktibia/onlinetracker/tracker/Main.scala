@@ -37,7 +37,7 @@ object Main extends IOApp {
           Stream.fixedRateStartImmediately[IO](60.seconds).evalTap { _ =>
             service.updateDataForWorld("Nefera")
               .handleErrorWith { e =>
-                Logger[IO].warn(e)("Recovering from error in stream:\n")
+                Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")
               }
           }.compile.drain.map(_ => ExitCode.Success)
         }
