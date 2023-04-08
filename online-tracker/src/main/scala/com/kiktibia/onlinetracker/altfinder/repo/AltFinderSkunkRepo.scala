@@ -1,15 +1,17 @@
 package com.kiktibia.onlinetracker.altfinder.repo
 
-import cats.effect.IO
+import cats.Monad
+import cats.effect.kernel.Concurrent
 import com.kiktibia.onlinetracker.altfinder.repo.Model.*
 import com.kiktibia.onlinetracker.repo.SkunkExtensions
+import skunk.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
-import skunk.*
 
-class AltFinderRepoImpl(val session: Session[IO]) extends AltFinderRepo[IO] with AltFinderCodecs with SkunkExtensions {
+class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: Concurrent[F], val FM: Monad[F])
+  extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
 
-  override def getOnlineTimes(characterNames: List[String]): IO[List[OnlineSegment]] = {
+  override def getOnlineTimes(characterNames: List[String]): F[List[OnlineSegment]] = {
     val q: Query[List[String], OnlineSegment] =
       sql"""
            SELECT o.character_id, o.login_time, o.logout_time
@@ -21,7 +23,7 @@ class AltFinderRepoImpl(val session: Session[IO]) extends AltFinderRepo[IO] with
     prepareToList(q, characterNames.map(_.toLowerCase))
   }
 
-  override def getPossibleMatches(characterNames: List[String]): IO[List[OnlineSegment]] = {
+  override def getPossibleMatches(characterNames: List[String]): F[List[OnlineSegment]] = {
     val q: Query[List[String], OnlineSegment] =
       sql"""
           SELECT o3.character_id, o3.login_time, o3.logout_time
@@ -35,7 +37,7 @@ class AltFinderRepoImpl(val session: Session[IO]) extends AltFinderRepo[IO] with
     prepareToList(q, characterNames.map(_.toLowerCase))
   }
 
-  override def getCharacterName(characterId: Long): IO[String] = {
+  override def getCharacterName(characterId: Long): F[String] = {
     val q: Query[Long, String] =
       sql"""
            SELECT name FROM character

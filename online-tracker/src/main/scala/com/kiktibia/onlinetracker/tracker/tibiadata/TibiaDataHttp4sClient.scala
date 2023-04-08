@@ -1,21 +1,21 @@
 package com.kiktibia.onlinetracker.tracker.tibiadata
 
-import cats.effect.IO
-import cats.effect.kernel.Resource
-import cats.syntax.all.*
-import com.kiktibia.onlinetracker.tracker.tibiadata.response.*
+import cats.effect.kernel.{Concurrent, Resource}
+import cats.effect.{IO, Sync}
+import cats.implicits.*
+import com.kiktibia.onlinetracker.tracker.tibiadata.response.{CharacterResponse, WorldResponse}
+import com.kiktibia.onlinetracker.tracker.tibiadata.{TibiaDataClientAlg, TibiaDataDecoders}
 import io.circe.generic.auto.*
-import io.circe.Decoder
 import org.http4s.Status
 import org.http4s.blaze.client.BlazeClientBuilder
-import org.http4s.circe.*
+import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.client.middleware.{GZip, Retry, RetryPolicy}
-import org.http4s.implicits.*
+import org.http4s.implicits.uri
 
 import scala.concurrent.duration.*
 
-object TibiaDataClient {
+object TibiaDataHttp4sClient {
   private val retryPolicy: RetryPolicy[IO] = (_, result, unsuccessfulAttempts) => {
     if unsuccessfulAttempts > 2 then None
     else if result.exists(_.status == Status.Ok) then None
@@ -27,24 +27,19 @@ object TibiaDataClient {
     .map(Retry[IO](retryPolicy)(_))
 }
 
-trait TibiaDataClient {
-  def getWorld(world: String): IO[WorldResponse]
-
-  def getCharacter(name: String): IO[CharacterResponse]
-}
-
-class TibiaDataClientImpl(client: Client[IO]) extends TibiaDataClient with TibiaDataDecoders {
+class TibiaDataHttp4sClient[F[_]: Sync](client: Client[F])(implicit val FC: Concurrent[F])
+  extends TibiaDataClientAlg[F] with TibiaDataDecoders {
 
   private val apiRoot = uri"https://api.tibiadata.com/v3"
 
-  def getWorld(world: String): IO[WorldResponse] = {
+  def getWorld(world: String): F[WorldResponse] = {
     val target = apiRoot / "world" / world
-    client.expect(target)(jsonOf[IO, WorldResponse])
+    client.expect(target)(jsonOf[F, WorldResponse])
   }
 
-  def getCharacter(name: String): IO[CharacterResponse] = {
+  def getCharacter(name: String): F[CharacterResponse] = {
     val target = apiRoot / "character" / name
-    client.expect(target)(jsonOf[IO, CharacterResponse])
+    client.expect(target)(jsonOf[F, CharacterResponse])
   }
 
 }

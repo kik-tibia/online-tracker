@@ -1,23 +1,26 @@
 package com.kiktibia.onlinetracker.tracker.service
 
-import cats.effect.{IO, Sync}
+import cats.Applicative
+import cats.effect.Sync
 import cats.implicits.*
+import cats.syntax.all.*
 import com.kiktibia.onlinetracker.tracker.repo.Model.*
-import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerRepo
-import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataClient
+import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerRepoAlg
+import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataClientAlg
 import com.kiktibia.onlinetracker.tracker.tibiadata.response.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDataClient) {
+class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataClient: TibiaDataClientAlg[F])
+  (implicit FA: Applicative[F]) {
 
-  implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
+  implicit private def logger: Logger[F] = Slf4jLogger.getLogger[F]
 
-  def updateDataForWorld(world: String): IO[Unit] = {
+  def updateDataForWorld(world: String): F[Unit] = {
     for
-      _ <- Logger[IO].info("--- start ---")
+      _ <- Logger[F].info("--- start ---")
       worldResponse <- tibiaDataClient.getWorld(world)
       tdTime = OffsetDateTime.parse(worldResponse.information.timestamp)
 
@@ -25,15 +28,15 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
       latestSaveTime <- repo.getLatestSaveTime(worldId)
 
       _ <- if !latestSaveTime.contains(tdTime) then updateOnlineList(worldId, worldResponse, tdTime)
-      else Logger[IO].info("Not proceeding, received cached response from TibiaData")
+      else Logger[F].info("Not proceeding, received cached response from TibiaData")
 
-      _ <- Logger[IO].info("--- end ---")
-    yield IO.unit
+      _ <- Logger[F].info("--- end ---")
+    yield ()
   }
 
-  private def updateOnlineList(worldId: Long, worldResponse: WorldResponse, time: OffsetDateTime): IO[Unit] = {
+  private def updateOnlineList(worldId: Long, worldResponse: WorldResponse, time: OffsetDateTime): F[Unit] = {
     for
-      _ <- Logger[IO].info(s"Updating online list for $time")
+      _ <- Logger[F].info(s"Updating online list for $time")
       dbOnlineRows <- repo.getAllOnline(worldId)
 
       dbOnlineNames = dbOnlineRows.map(_.name)
@@ -45,29 +48,29 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
       lastSequenceId <- repo.getMaxSequenceId(worldId).map(_.getOrElse(0L))
       saveTimeId <- repo.insertWorldSaveTime(WorldSaveTimeRow(None, worldId, lastSequenceId + 1, time))
 
-      _ <- Logger[IO].info(s"Inserting ${loggedOn.length} characters: ${loggedOn.mkString(", ")}")
+      _ <- Logger[F].info(s"Inserting ${loggedOn.length} characters: ${loggedOn.mkString(", ")}")
       _ <- loggedOn.map(i => checkIfCharacterExists(i, time)).sequence
       _ <- loggedOn.map(i => repo.insertOnline(OnlineNameTime(i, saveTimeId), worldId)).sequence
 
-      _ <- Logger[IO].info(s"Removing ${loggedOff.length} characters: ${loggedOff.mkString(", ")}")
+      _ <- Logger[F].info(s"Removing ${loggedOff.length} characters: ${loggedOff.mkString(", ")}")
       _ <- loggedOff.map(i => repo.deleteOnline(i, worldId)).sequence
 
       _ <- dbOnlineRows.filter(i => loggedOff.contains(i.name))
         .map(i => repo.insertOnlineHistory(i.name, i.loginTime, saveTimeId)).sequence
-    yield IO.unit
+    yield ()
   }
 
-  private def checkIfCharacterExists(name: String, time: OffsetDateTime): IO[Unit] = {
+  private def checkIfCharacterExists(name: String, time: OffsetDateTime): F[Unit] = {
     for
       maybeChar <- repo.getCharacter(name)
       _ <- maybeChar match {
-        case Some(_) => IO.unit // Character already exists in the database, do nothing
+        case Some(_) => FA.pure(()) // Character already exists in the database, do nothing
         case None => insertOrRenameCharacter(name, time)
       }
-    yield IO.unit
+    yield ()
   }
 
-  private def insertOrRenameCharacter(name: String, time: OffsetDateTime): IO[Unit] = {
+  private def insertOrRenameCharacter(name: String, time: OffsetDateTime): F[Unit] = {
     // Inserts a new character unless if the character is was renamed, in which case handles the rename
     for
       formerNames <- tibiaDataClient.getCharacter(name).map(_.characters.character.former_names.getOrElse(Nil))
@@ -79,10 +82,10 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
             _ <- repo.insertCharacterNameHistory(
               CharacterNameHistoryRow(None, charId, c.name, c.currentNameSince, time))
             _ <- repo.updateCharacterName(charId, name, time)
-          yield IO.unit
+          yield ()
         case None => repo.insertCharacter(CharacterRow(None, name, time, time))
       }
-    yield IO.unit
+    yield ()
   }
 
 }

@@ -3,9 +3,9 @@ package com.kiktibia.onlinetracker.tracker
 import cats.effect.*
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.config.{AppConfig, DatabaseConfig}
-import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerRepoImpl
+import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerSkunkRepo
 import com.kiktibia.onlinetracker.tracker.service.OnlineTrackerService
-import com.kiktibia.onlinetracker.tracker.tibiadata.{TibiaDataClient, TibiaDataClientImpl}
+import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataHttp4sClient
 import fs2.Stream
 import natchez.Trace.Implicits.noop
 import org.typelevel.log4cats.Logger
@@ -16,7 +16,7 @@ import scala.concurrent.duration.*
 
 object Main extends IOApp {
 
-  implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
+  implicit def logger[F[_]: Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>
@@ -29,9 +29,9 @@ object Main extends IOApp {
           password = cfg.password.some)
 
       session.use { s =>
-        val repo = new OnlineTrackerRepoImpl(s)
-        TibiaDataClient.clientResource.use { client =>
-          val tibiaDataClient = new TibiaDataClientImpl(client)
+        val repo = new OnlineTrackerSkunkRepo(s)
+        TibiaDataHttp4sClient.clientResource.use { client =>
+          val tibiaDataClient = new TibiaDataHttp4sClient(client)
           val service = new OnlineTrackerService(repo, tibiaDataClient)
 
           Stream.fixedRateStartImmediately[IO](60.seconds).evalTap { _ =>

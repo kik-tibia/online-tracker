@@ -1,17 +1,20 @@
 package com.kiktibia.onlinetracker.tracker.repo
 
-import cats.effect.IO
+import cats.Monad
+import cats.effect.kernel.Concurrent
+import cats.syntax.all.*
 import com.kiktibia.onlinetracker.repo.SkunkExtensions
 import com.kiktibia.onlinetracker.tracker.repo.Model.*
+import skunk.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
-import skunk.*
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[IO] with OnlineTrackerCodecs with SkunkExtensions {
+class OnlineTrackerSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: Concurrent[F], val FM: Monad[F])
+  extends OnlineTrackerRepoAlg[F] with OnlineTrackerCodecs with SkunkExtensions[F] {
 
-  override def getWorld(name: String): IO[WorldRow] = {
+  override def getWorld(name: String): F[WorldRow] = {
     val q: Query[String, WorldRow] =
       sql"""
            SELECT id, name
@@ -22,7 +25,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.unique(q, name)
   }
 
-  override def getLatestSaveTime(worldId: Long): IO[Option[OffsetDateTime]] = {
+  override def getLatestSaveTime(worldId: Long): F[Option[OffsetDateTime]] = {
     val q: Query[Long, Option[OffsetDateTime]] =
       sql"""
            SELECT MAX(time)
@@ -33,7 +36,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.unique(q, worldId)
   }
 
-  def getAllOnline(worldId: Long): IO[List[OnlineNameTime]] = {
+  def getAllOnline(worldId: Long): F[List[OnlineNameTime]] = {
     val q: Query[Long, OnlineNameTime] =
       sql"""
            SELECT character.name, currently_online.login_time
@@ -46,7 +49,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     prepareToList(q, worldId)
   }
 
-  override def getMaxSequenceId(worldId: Long): IO[Option[Long]] = {
+  override def getMaxSequenceId(worldId: Long): F[Option[Long]] = {
     val q: Query[Long, Option[Long]] =
       sql"""
            SELECT MAX(sequence_id)
@@ -57,7 +60,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.unique(q, worldId)
   }
 
-  override def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long] = {
+  override def insertWorldSaveTime(w: WorldSaveTimeRow): F[Long] = {
     val q: Query[WorldSaveTimeRow, Long] =
       sql"""
            INSERT INTO world_save_time(world_id, sequence_id, time)
@@ -68,7 +71,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.unique(q, w)
   }
 
-  override def insertCharacterNameHistory(characterNameHistory: CharacterNameHistoryRow): IO[Unit] = {
+  override def insertCharacterNameHistory(characterNameHistory: CharacterNameHistoryRow): F[Unit] = {
     val c: Command[CharacterNameHistoryRow] =
       sql"""
            INSERT INTO character_name_history(character_id, name, from_date, until_date)
@@ -78,7 +81,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.prepare(c).flatMap(_.execute(characterNameHistory)).void
   }
 
-  override def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): IO[Unit] = {
+  override def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): F[Unit] = {
     val c: Command[String ~ OffsetDateTime ~ Long] =
       sql"""
            UPDATE character SET
@@ -90,7 +93,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.prepare(c).flatMap(_.execute(newName ~ time ~ id)).void
   }
 
-  override def insertCharacter(character: CharacterRow): IO[Unit] = {
+  override def insertCharacter(character: CharacterRow): F[Unit] = {
     val c: Command[CharacterRow] =
       sql"""
            INSERT INTO character(name, created, current_name_since)
@@ -101,7 +104,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.prepare(c).flatMap(_.execute(character)).void
   }
 
-  override def getCharacter(name: String): IO[Option[CharacterRow]] = {
+  override def getCharacter(name: String): F[Option[CharacterRow]] = {
     val q: Query[String, CharacterRow] =
       sql"""
            SELECT id, name, created, current_name_since FROM character
@@ -111,7 +114,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.option(q, name)
   }
 
-  override def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit] = {
+  override def insertOnline(online: OnlineNameTime, worldId: Long): F[Unit] = {
     val c: Command[String ~ Long ~ Long] =
       sql"""
            INSERT INTO currently_online(character_id, world_id, login_time)
@@ -124,7 +127,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.prepare(c).flatMap(_.execute(online.name ~ worldId ~ online.loginTime)).void
   }
 
-  override def deleteOnline(name: String, worldId: Long): IO[Unit] = {
+  override def deleteOnline(name: String, worldId: Long): F[Unit] = {
     val c: Command[String ~ Long] =
       sql"""
            DELETE FROM currently_online O
@@ -137,7 +140,7 @@ class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[
     session.prepare(c).flatMap(_.execute(name ~ worldId)).void
   }
 
-  override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit] = {
+  override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): F[Unit] = {
     val c: Command[String ~ Long ~ Long] =
       sql"""
            INSERT INTO online_history(character_id, login_time, logout_time)

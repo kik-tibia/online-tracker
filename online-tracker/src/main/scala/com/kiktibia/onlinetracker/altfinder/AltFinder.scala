@@ -2,7 +2,7 @@ package com.kiktibia.onlinetracker.altfinder
 
 import cats.effect.*
 import cats.syntax.all.*
-import com.kiktibia.onlinetracker.altfinder.repo.AltFinderRepoImpl
+import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.config.{AppConfig, DatabaseConfig}
 import fs2.Stream
@@ -28,7 +28,7 @@ object AltFinder extends IOApp {
           password = cfg.password.some)
 
       session.use { s =>
-        val repo = new AltFinderRepoImpl(s)
+        val repo = new AltFinderSkunkRepo(s)
         val service = new AltFinderService(repo)
         for
           _ <- Logger[IO].info("Running alt finder")

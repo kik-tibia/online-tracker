@@ -4,7 +4,7 @@ import com.kiktibia.onlinetracker.tracker.repo.Model.*
 
 import java.time.OffsetDateTime
 
-trait OnlineTrackerRepo[F[_]] {
+trait OnlineTrackerRepoAlg[F[_]] {
   def getWorld(name: String): F[WorldRow]
 
   def getLatestSaveTime(worldId: Long): F[Option[OffsetDateTime]]

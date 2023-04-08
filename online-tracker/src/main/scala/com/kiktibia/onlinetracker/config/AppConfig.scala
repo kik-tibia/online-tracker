@@ -2,6 +2,7 @@ package com.kiktibia.onlinetracker.config
 
 import cats.syntax.all.*
 import ciris.*
+
 object AppConfig {
   val databaseConfig: ConfigValue[Effect, DatabaseConfig] = (
     env("DB_HOST").as[String],
