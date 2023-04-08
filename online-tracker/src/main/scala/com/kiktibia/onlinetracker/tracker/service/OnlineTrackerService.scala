@@ -11,7 +11,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerService(repo: OnlineTrackerRepo, tibiaDataClient: TibiaDataClient) {
+class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDataClient) {
 
   implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 

@@ -7,7 +7,7 @@ import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineSegment
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-class AltFinderService(repo: AltFinderRepo) {
+class AltFinderService(repo: AltFinderRepo[IO]) {
 
   implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 

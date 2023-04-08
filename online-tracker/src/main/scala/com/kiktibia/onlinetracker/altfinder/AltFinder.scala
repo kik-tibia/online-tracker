@@ -33,10 +33,7 @@ object AltFinder extends IOApp {
         for {
           _ <- Logger[IO].info("Running alt finder")
           _ <- service.printOnlineTimes(List(
-            "kikaro",
-            "elder kikaro",
-            "kikarrow",
-            "goanna kendrick"
+            "kikaro"
           ))
         } yield ExitCode.Success
       }

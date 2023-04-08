@@ -1,32 +1,31 @@
 package com.kiktibia.onlinetracker.tracker.repo
 
-import cats.effect.IO
 import com.kiktibia.onlinetracker.tracker.repo.Model.*
 
 import java.time.OffsetDateTime
 
-trait OnlineTrackerRepo {
-  def getWorld(name: String): IO[WorldRow]
+trait OnlineTrackerRepo[F[_]] {
+  def getWorld(name: String): F[WorldRow]
 
-  def getLatestSaveTime(worldId: Long): IO[Option[OffsetDateTime]]
+  def getLatestSaveTime(worldId: Long): F[Option[OffsetDateTime]]
 
-  def getAllOnline(worldId: Long): IO[List[OnlineNameTime]]
+  def getAllOnline(worldId: Long): F[List[OnlineNameTime]]
 
-  def getMaxSequenceId(worldId: Long): IO[Option[Long]]
+  def getMaxSequenceId(worldId: Long): F[Option[Long]]
 
-  def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long]
+  def insertWorldSaveTime(w: WorldSaveTimeRow): F[Long]
 
-  def insertCharacterNameHistory(characterNameHistoryRow: CharacterNameHistoryRow): IO[Unit]
+  def insertCharacterNameHistory(characterNameHistoryRow: CharacterNameHistoryRow): F[Unit]
 
-  def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): IO[Unit]
+  def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): F[Unit]
 
-  def insertCharacter(character: CharacterRow): IO[Unit]
+  def insertCharacter(character: CharacterRow): F[Unit]
 
-  def getCharacter(name: String): IO[Option[CharacterRow]]
+  def getCharacter(name: String): F[Option[CharacterRow]]
 
-  def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit]
+  def insertOnline(online: OnlineNameTime, worldId: Long): F[Unit]
 
-  def deleteOnline(name: String, worldId: Long): IO[Unit]
+  def deleteOnline(name: String, worldId: Long): F[Unit]
 
-  def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit]
+  def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): F[Unit]
 }

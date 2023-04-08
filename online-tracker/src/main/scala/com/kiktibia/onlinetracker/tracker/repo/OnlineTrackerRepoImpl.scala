@@ -9,7 +9,7 @@ import skunk.*
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo with OnlineTrackerCodecs with SkunkExtensions {
+class OnlineTrackerRepoImpl(val session: Session[IO]) extends OnlineTrackerRepo[IO] with OnlineTrackerCodecs with SkunkExtensions {
 
   override def getWorld(name: String): IO[WorldRow] = {
     val q: Query[String, WorldRow] =
