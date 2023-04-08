@@ -17,7 +17,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
 
   private case class CharacterAdjacencies(characterName: String, adjacencies: Int)
 
-  def printOnlineTimes(characterNames: List[String]): F[Unit] = {
+  def printAlts(characterNames: List[String]): F[Unit] = {
     for
       mainSegments <- repo.getOnlineTimes(characterNames)
       matchesToCheck <- repo.getPossibleMatches(characterNames)

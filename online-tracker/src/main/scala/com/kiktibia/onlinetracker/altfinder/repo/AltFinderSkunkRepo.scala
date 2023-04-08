@@ -28,7 +28,7 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: 
       sql"""
           SELECT o3.character_id, o3.login_time, o3.logout_time
           FROM online_history o1
-          JOIN online_history o2 ON o1.login_time = o2.logout_time
+          JOIN online_history o2 ON (o1.login_time = o2.logout_time OR o1.logout_time = o2.login_time)
           JOIN character ON o1.character_id = character.id
           JOIN online_history o3 ON o2.character_id = o3.character_id
           WHERE LOWER(character.name) IN (${varchar.values.list(characterNames.length)})
