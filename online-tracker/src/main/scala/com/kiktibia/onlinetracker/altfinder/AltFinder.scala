@@ -30,12 +30,12 @@ object AltFinder extends IOApp {
       session.use { s =>
         val repo = new AltFinderRepoImpl(s)
         val service = new AltFinderService(repo)
-        for {
+        for
           _ <- Logger[IO].info("Running alt finder")
           _ <- service.printOnlineTimes(List(
             "kikaro"
           ))
-        } yield ExitCode.Success
+        yield ExitCode.Success
       }
     }
   }

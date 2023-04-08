@@ -17,8 +17,8 @@ import scala.concurrent.duration.*
 
 object TibiaDataClient {
   private val retryPolicy: RetryPolicy[IO] = (_, result, unsuccessfulAttempts) => {
-    if (unsuccessfulAttempts > 2) None
-    else if (result.exists(_.status == Status.Ok)) None
+    if unsuccessfulAttempts > 2 then None
+    else if result.exists(_.status == Status.Ok) then None
     else 1.second.some
   }
 

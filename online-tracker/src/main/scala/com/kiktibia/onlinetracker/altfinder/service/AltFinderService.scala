@@ -18,14 +18,14 @@ class AltFinderService(repo: AltFinderRepo[IO]) {
   private case class CharacterAdjacencies(characterName: String, adjacencies: Int)
 
   def printOnlineTimes(characterNames: List[String]): IO[Unit] = {
-    for {
+    for
       mainSegments <- repo.getOnlineTimes(characterNames)
       matchesToCheck <- repo.getPossibleMatches(characterNames)
       _ <- Logger[IO].info(s"${matchesToCheck.length} rows to analyse")
       adj = getAdjacencies(mainSegments, matchesToCheck).take(10)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map(i => CharacterAdjacencies(i, a.adjacencies))).sequence
       _ <- results.map(i => Logger[IO].info(i.toString)).sequence
-    } yield IO.unit
+    yield IO.unit
   }
 
   private def getAdjacencies(mainHistory: List[OnlineSegment], others: List[OnlineSegment]): List[CharacterIdAdjacencies] = {

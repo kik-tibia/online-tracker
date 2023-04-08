@@ -16,7 +16,7 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
   implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
 
   def updateDataForWorld(world: String): IO[Unit] = {
-    for {
+    for
       _ <- Logger[IO].info("--- start ---")
       worldResponse <- tibiaDataClient.getWorld(world)
       tdTime = OffsetDateTime.parse(worldResponse.information.timestamp)
@@ -24,15 +24,15 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
       worldId <- repo.getWorld(world).map(_.id)
       latestSaveTime <- repo.getLatestSaveTime(worldId)
 
-      _ <- if (!latestSaveTime.contains(tdTime)) updateOnlineList(worldId, worldResponse, tdTime)
+      _ <- if !latestSaveTime.contains(tdTime) then updateOnlineList(worldId, worldResponse, tdTime)
       else Logger[IO].info("Not proceeding, received cached response from TibiaData")
 
       _ <- Logger[IO].info("--- end ---")
-    } yield IO.unit
+    yield IO.unit
   }
 
   private def updateOnlineList(worldId: Long, worldResponse: WorldResponse, time: OffsetDateTime): IO[Unit] = {
-    for {
+    for
       _ <- Logger[IO].info(s"Updating online list for $time")
       dbOnlineRows <- repo.getAllOnline(worldId)
 
@@ -54,35 +54,35 @@ class OnlineTrackerService(repo: OnlineTrackerRepo[IO], tibiaDataClient: TibiaDa
 
       _ <- dbOnlineRows.filter(i => loggedOff.contains(i.name))
         .map(i => repo.insertOnlineHistory(i.name, i.loginTime, saveTimeId)).sequence
-    } yield IO.unit
+    yield IO.unit
   }
 
   private def checkIfCharacterExists(name: String, time: OffsetDateTime): IO[Unit] = {
-    for {
+    for
       maybeChar <- repo.getCharacter(name)
       _ <- maybeChar match {
         case Some(_) => IO.unit // Character already exists in the database, do nothing
         case None => insertOrRenameCharacter(name, time)
       }
-    } yield IO.unit
+    yield IO.unit
   }
 
   private def insertOrRenameCharacter(name: String, time: OffsetDateTime): IO[Unit] = {
     // Inserts a new character unless if the character is was renamed, in which case handles the rename
-    for {
+    for
       formerNames <- tibiaDataClient.getCharacter(name).map(_.characters.character.former_names.getOrElse(Nil))
       formerNamesCharacters <- formerNames.map(i => repo.getCharacter(i)).sequence.map(_.flatten)
       _ <- formerNamesCharacters.headOption match {
         case Some(c) =>
           val charId = c.id.get
-          for {
+          for
             _ <- repo.insertCharacterNameHistory(
               CharacterNameHistoryRow(None, charId, c.name, c.currentNameSince, time))
             _ <- repo.updateCharacterName(charId, name, time)
-          } yield IO.unit
+          yield IO.unit
         case None => repo.insertCharacter(CharacterRow(None, name, time, time))
       }
-    } yield IO.unit
+    yield IO.unit
   }
 
 }
