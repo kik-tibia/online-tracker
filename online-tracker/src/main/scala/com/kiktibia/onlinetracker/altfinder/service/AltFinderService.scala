@@ -39,7 +39,8 @@ class AltFinderService(repo: AltFinderRepo[IO]) {
     mainHistory.count { m =>
       other.exists { o =>
         (o.start >= m.start && o.start < m.end) ||
-          (o.end > m.start && o.end < m.end)
+          (o.end > m.start && o.end < m.end) ||
+          (o.start < m.start && o.end >= m.end)
       }
     }
   }
