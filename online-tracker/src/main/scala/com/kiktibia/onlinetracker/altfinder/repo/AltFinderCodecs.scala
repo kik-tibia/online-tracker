@@ -10,4 +10,9 @@ trait AltFinderCodecs {
     (int8 ~ int8 ~ int8).map {
       case id ~ start ~ end => OnlineSegment(id, start, end)
     }
+
+  val onlineDateSegmentDecoder: Decoder[OnlineDateSegment] =
+    (varchar ~ timestamptz ~ timestamptz).map {
+      case name ~ start ~ end => OnlineDateSegment(name, start, end)
+    }
 }

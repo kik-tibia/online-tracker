@@ -26,7 +26,7 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: 
   override def getPossibleMatches(characterNames: List[String]): F[List[OnlineSegment]] = {
     val q: Query[List[String], OnlineSegment] =
       sql"""
-          SELECT o3.character_id, o3.login_time, o3.logout_time
+          SELECT DISTINCT o3.character_id, o3.login_time, o3.logout_time
           FROM online_history o1
           JOIN online_history o2 ON (o1.login_time = o2.logout_time OR o1.logout_time = o2.login_time)
           JOIN character ON o1.character_id = character.id
@@ -45,6 +45,20 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: 
       """
         .query(varchar)
     session.unique(q, characterId)
+  }
+
+  override def getCharacterHistories(characterNames: List[String]): F[List[OnlineDateSegment]] = {
+    val q: Query[List[String], OnlineDateSegment] =
+      sql"""
+            SELECT c.name, w1.time, w2.time
+            FROM online_history o
+            JOIN character c ON o.character_id = c.id
+            JOIN world_save_time w1 ON o.login_time = w1.id
+            JOIN world_save_time w2 ON o.logout_time = w2.id
+            WHERE lower(c.name) IN (${varchar.values.list(characterNames.length)})
+            ORDER BY w1.sequence_id
+      """.query(onlineDateSegmentDecoder)
+    prepareToList(q, characterNames.map(_.toLowerCase))
   }
 
 }

@@ -32,7 +32,7 @@ object AltFinder extends IOApp {
         val service = new AltFinderService(repo)
         for
           _ <- Logger[IO].info("Running alt finder")
-          _ <- service.printAlts(List(
+          _ <- service.findAndPrintAlts(List(
             "kikaro"
           ))
         yield ExitCode.Success
