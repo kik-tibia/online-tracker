@@ -43,6 +43,9 @@ CREATE TABLE online_history (
   logout_time BIGINT REFERENCES world_save_time(id)
 );
 
+CREATE INDEX online_history_character_id ON online_history(character_id);
+CREATE INDEX online_history_logout_time ON online_history(logout_time);
+CREATE INDEX online_history_login_time ON online_history(login_time);
 
 -- Insert initial data
 

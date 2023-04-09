@@ -11,5 +11,5 @@ trait SkunkExtensions[F[_]] {
   val session: Session[F]
 
   def prepareToList[A, B](q: Query[A, B], args: A): F[List[B]] =
-    session.prepare(q).flatMap(_.stream(args, 64).compile.toList)
+    session.prepare(q).flatMap(_.stream(args, 8192).compile.toList)
 }
