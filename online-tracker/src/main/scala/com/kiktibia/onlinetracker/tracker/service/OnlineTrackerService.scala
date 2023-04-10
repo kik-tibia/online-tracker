@@ -14,9 +14,9 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import java.time.OffsetDateTime
 
 class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataClient: TibiaDataClientAlg[F])
-  (implicit FA: Applicative[F]) {
+  (using FA: Applicative[F]) {
 
-  implicit private def logger: Logger[F] = Slf4jLogger.getLogger[F]
+  given Logger[F] = Slf4jLogger.getLogger[F]
 
   def updateDataForWorld(world: String): F[Unit] = {
     for

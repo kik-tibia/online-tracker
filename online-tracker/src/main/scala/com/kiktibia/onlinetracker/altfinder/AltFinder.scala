@@ -15,7 +15,7 @@ import scala.concurrent.duration.*
 
 object AltFinder extends IOApp {
 
-  implicit def logger[F[_] : Sync]: Logger[F] = Slf4jLogger.getLogger[F]
+  given Logger[IO] = Slf4jLogger.getLogger[IO]
 
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>

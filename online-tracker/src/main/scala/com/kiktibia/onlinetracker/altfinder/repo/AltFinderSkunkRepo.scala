@@ -8,7 +8,7 @@ import skunk.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
 
-class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: Concurrent[F], val FM: Monad[F])
+class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[F])
   extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
 
   override def getOnlineTimes(characterNames: List[String]): F[List[OnlineSegment]] = {

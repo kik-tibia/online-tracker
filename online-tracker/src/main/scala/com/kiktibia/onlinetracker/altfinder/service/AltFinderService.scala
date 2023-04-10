@@ -20,7 +20,7 @@ object AltFinderService {
 
 class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
 
-  implicit private def logger: Logger[F] = Slf4jLogger.getLogger[F]
+  given Logger[F] = Slf4jLogger.getLogger[F]
 
   def printLoginHistories(characterNames: List[String]): F[Unit] = {
     for

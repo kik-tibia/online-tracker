@@ -11,7 +11,7 @@ import skunk.implicits.{sql, toIdOps}
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerSkunkRepo[F[_]: Monad](val session: Session[F])(implicit val FC: Concurrent[F], val FM: Monad[F])
+class OnlineTrackerSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[F])
   extends OnlineTrackerRepoAlg[F] with OnlineTrackerCodecs with SkunkExtensions[F] {
 
   override def getWorld(name: String): F[WorldRow] = {

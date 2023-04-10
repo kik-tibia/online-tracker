@@ -6,10 +6,8 @@ import cats.syntax.all.*
 import skunk.{Query, Session}
 
 trait SkunkExtensions[F[_]] {
-  implicit val FM: Monad[F]
-  implicit val FC: Concurrent[F]
   val session: Session[F]
 
-  def prepareToList[A, B](q: Query[A, B], args: A): F[List[B]] =
+  def prepareToList[A, B](q: Query[A, B], args: A)(using Concurrent[F]): F[List[B]] =
     session.prepare(q).flatMap(_.stream(args, 8192).compile.toList)
 }

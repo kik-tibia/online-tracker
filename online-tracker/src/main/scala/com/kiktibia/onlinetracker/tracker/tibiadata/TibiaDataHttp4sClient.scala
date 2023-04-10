@@ -27,7 +27,7 @@ object TibiaDataHttp4sClient {
     .map(Retry[IO](retryPolicy)(_))
 }
 
-class TibiaDataHttp4sClient[F[_]: Sync](client: Client[F])(implicit val FC: Concurrent[F])
+class TibiaDataHttp4sClient[F[_]: Sync](client: Client[F])(using Concurrent[F])
   extends TibiaDataClientAlg[F] with TibiaDataDecoders {
 
   private val apiRoot = uri"https://api.tibiadata.com/v3"
