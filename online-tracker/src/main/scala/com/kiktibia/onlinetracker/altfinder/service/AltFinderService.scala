@@ -67,11 +67,12 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
   }
 
   private def countClashes(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Int = {
+    // Set to 1 for for an acceptable overlap of 1 minute
+    // e.g. if you x-log then switch account, both chars could be online at the same time for 1 minute
+    val overlap = 0
     mainHistory.count { m =>
       other.exists { o =>
-        (o.start >= m.start && o.start < m.end) ||
-          (o.end > m.start && o.end < m.end) ||
-          (o.start < m.start && o.end >= m.end)
+        o.start < m.end - overlap && m.start < o.end - overlap
       }
     }
   }
