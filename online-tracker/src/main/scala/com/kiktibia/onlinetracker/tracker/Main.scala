@@ -34,7 +34,7 @@ object Main extends IOApp {
           val tibiaDataClient = new TibiaDataHttp4sClient(client)
           val service = new OnlineTrackerService(repo, tibiaDataClient)
 
-          Stream.fixedRateStartImmediately[IO](60.seconds).evalTap { _ =>
+          Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
             service.updateDataForWorld("Nefera")
               .handleErrorWith { e =>
                 Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")

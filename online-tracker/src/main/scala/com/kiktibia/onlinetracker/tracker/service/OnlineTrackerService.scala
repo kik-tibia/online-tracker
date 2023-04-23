@@ -42,8 +42,8 @@ class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataC
       dbOnlineNames = dbOnlineRows.map(_.name)
       tdOnlineNames = worldResponse.worlds.world.online_players.getOrElse(Nil).map(_.name)
 
-      loggedOff = dbOnlineNames.filterNot(i => tdOnlineNames.contains(i))
-      loggedOn = tdOnlineNames.filterNot(i => dbOnlineNames.contains(i))
+      loggedOff = dbOnlineNames.filterNot(i => tdOnlineNames.contains(i)).sorted
+      loggedOn = tdOnlineNames.filterNot(i => dbOnlineNames.contains(i)).sorted
 
       lastSequenceId <- repo.getMaxSequenceId(worldId).map(_.getOrElse(0L))
       saveTimeId <- repo.insertWorldSaveTime(WorldSaveTimeRow(None, worldId, lastSequenceId + 1, time))
