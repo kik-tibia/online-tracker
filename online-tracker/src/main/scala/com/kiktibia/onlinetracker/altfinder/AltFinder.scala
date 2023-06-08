@@ -11,6 +11,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
 
+import java.time.OffsetDateTime
 import scala.concurrent.duration.*
 
 object AltFinder extends IOApp {
@@ -30,11 +31,17 @@ object AltFinder extends IOApp {
       session.use { s =>
         val repo = new AltFinderSkunkRepo(s)
         val service = new AltFinderService(repo)
+
+        val from = OffsetDateTime.now().minusDays(7).some
+        val to = None
         for
           _ <- Logger[IO].info("Running alt finder")
-          _ <- service.findAndPrintAlts(List(
-            "kikaro"
-          ))
+          _ <- service.findAndPrintAlts(
+            List(
+              "kikaro", "goanna kendrick"
+            ), from, to
+          )
+          _ <- Logger[IO].info("Done")
         yield ExitCode.Success
       }
     }

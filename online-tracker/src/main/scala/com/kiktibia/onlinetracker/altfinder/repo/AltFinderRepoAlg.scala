@@ -2,12 +2,14 @@ package com.kiktibia.onlinetracker.altfinder.repo
 
 import com.kiktibia.onlinetracker.altfinder.repo.Model.*
 
-trait AltFinderRepoAlg[F[_]] {
-  def getOnlineTimes(characterNames: List[String]): F[List[OnlineSegment]]
+import java.time.OffsetDateTime
 
-  def getPossibleMatches(characterNames: List[String]): F[List[OnlineSegment]]
+trait AltFinderRepoAlg[F[_]] {
+  def getOnlineTimes(characterNames: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineSegment]]
+
+  def getPossibleMatches(characterNames: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineSegment]]
 
   def getCharacterName(characterId: Long): F[String]
 
-  def getCharacterHistories(characterName: List[String]): F[List[OnlineDateSegment]]
+  def getCharacterHistories(characterName: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineDateSegment]]
 }

@@ -17,6 +17,7 @@ scalacOptions ++= Seq("-Xmax-inlines", "64") // https://github.com/circe/circe/i
 
 val http4sVersion = "1.0.0-M38"
 
+libraryDependencies += "com.carrotsearch" % "java-sizeof" % "0.0.5"
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
