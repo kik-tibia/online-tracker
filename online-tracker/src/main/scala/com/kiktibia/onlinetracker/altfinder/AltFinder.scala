@@ -11,7 +11,8 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
 
-import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset}
 import scala.concurrent.duration.*
 
 object AltFinder extends IOApp {
@@ -20,27 +21,25 @@ object AltFinder extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>
-      val session: Resource[IO, Session[IO]] =
-        Session.single(
-          host = cfg.host,
-          port = cfg.port,
-          user = cfg.user,
-          database = cfg.database,
-          password = cfg.password.some)
+      val session: Resource[IO, Session[IO]] = Session.single(
+        host = cfg.host,
+        port = cfg.port,
+        user = cfg.user,
+        database = cfg.database,
+        password = cfg.password.some
+      )
 
       session.use { s =>
         val repo = new AltFinderSkunkRepo(s)
         val service = new AltFinderService(repo)
 
-        val from = OffsetDateTime.now().minusDays(7).some
+        // val from = OffsetDateTime.parse("2023-06-15T10:00:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).some
+        val from = OffsetDateTime.now().minusDays(5).some
+        // val from = None
         val to = None
         for
           _ <- Logger[IO].info("Running alt finder")
-          _ <- service.findAndPrintAlts(
-            List(
-              "kikaro", "goanna kendrick"
-            ), from, to
-          )
+          _ <- service.findAndPrintAlts(List("kikaro"), from, to)
           _ <- Logger[IO].info("Done")
         yield ExitCode.Success
       }

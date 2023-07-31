@@ -1,6 +1,6 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "3.2.2"
+ThisBuild / scalaVersion := "3.3.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -39,4 +39,5 @@ libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
 
-libraryDependencies += "is.cir" %% "ciris" % "3.1.0"
+libraryDependencies += "is.cir" %% "ciris" % "3.2.0"
+libraryDependencies += "org.knowm.xchart" % "xchart" % "3.8.0"

@@ -10,14 +10,17 @@ import skunk.implicits.{sql, toIdOps}
 
 import java.time.OffsetDateTime
 
-class AltFinderSkunkRepo[F[_] : Monad](val session: Session[F])(using Concurrent[F])
-  extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
+class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[F])
+    extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
 
-  override def getOnlineTimes(characterNames: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineSegment]] = {
+  override def getOnlineTimes(
+      characterNames: List[String],
+      from: Option[OffsetDateTime],
+      to: Option[OffsetDateTime]
+  ): F[List[OnlineSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
-    val baseFragment =
-      sql"""
+    val baseFragment = sql"""
         SELECT o.character_id, o.login_time, o.logout_time
         FROM online_history o JOIN character c
         ON o.character_id = c.id
@@ -44,18 +47,20 @@ class AltFinderSkunkRepo[F[_] : Monad](val session: Session[F])(using Concurrent
     }
   }
 
-  override def getPossibleMatches(characterNames: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineSegment]] = {
+  override def getPossibleMatches(
+      characterNames: List[String],
+      from: Option[OffsetDateTime],
+      to: Option[OffsetDateTime]
+  ): F[List[OnlineSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
-    val baseFragment =
-      sql"""
+    val baseFragment = sql"""
         SELECT o.character_id, o.login_time, o.logout_time
         FROM online_history o
       """
     val joinFragment = sql"JOIN world_save_time w ON o.login_time = w.id"
     val whereInFragment = sql"WHERE o.character_id IN"
-    val innerFragment =
-      sql"""
+    val innerFragment = sql"""
         SELECT DISTINCT o2.character_id
         FROM online_history o1
         JOIN online_history o2 ON (o1.login_time = o2.logout_time OR o1.logout_time = o2.login_time)
@@ -69,13 +74,19 @@ class AltFinderSkunkRepo[F[_] : Monad](val session: Session[F])(using Concurrent
 
     (from, to) match {
       case (Some(f), Some(t)) =>
-        val q = sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromToFragment) $fromToFragment".query(onlineSegmentDecoder)
+        val q =
+          sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromToFragment) $fromToFragment"
+            .query(onlineSegmentDecoder)
         prepareToList(q, cl ~ (f ~ t) ~ (f ~ t))
       case (Some(f), None) =>
-        val q = sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromFragment) $fromFragment".query(onlineSegmentDecoder)
+        val q =
+          sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromFragment) $fromFragment"
+            .query(onlineSegmentDecoder)
         prepareToList(q, cl ~ f ~ f)
       case (None, Some(t)) =>
-        val q = sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $toFragment) $toFragment".query(onlineSegmentDecoder)
+        val q =
+          sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $toFragment) $toFragment"
+            .query(onlineSegmentDecoder)
         prepareToList(q, cl ~ t ~ t)
       case (None, None) =>
         val q = sql"$baseFragment $whereInFragment ($innerFragment $charFragment)".query(onlineSegmentDecoder)
@@ -84,19 +95,21 @@ class AltFinderSkunkRepo[F[_] : Monad](val session: Session[F])(using Concurrent
   }
 
   override def getCharacterName(characterId: Long): F[String] = {
-    val q: Query[Long, String] =
-      sql"""
+    val q: Query[Long, String] = sql"""
         SELECT name FROM character
         WHERE id = $int8
       """.query(varchar)
     session.unique(q, characterId)
   }
 
-  override def getCharacterHistories(characterNames: List[String], from: Option[OffsetDateTime], to: Option[OffsetDateTime]): F[List[OnlineDateSegment]] = {
+  override def getCharacterHistories(
+      characterNames: List[String],
+      from: Option[OffsetDateTime],
+      to: Option[OffsetDateTime]
+  ): F[List[OnlineDateSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
-    val baseFragment =
-      sql"""
+    val baseFragment = sql"""
         SELECT c.name, w1.time, w2.time
         FROM online_history o
         JOIN character c ON o.character_id = c.id
