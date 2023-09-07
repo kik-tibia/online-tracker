@@ -17,7 +17,7 @@ object LoginPlotter {
     val chart = new HeatMapChartBuilder().title("title here").theme(ChartTheme.Matlab).build()
 
     val characterNames = logins.map(_.characterName).distinct
-    val (heatData, times) = loginsToHeatData(logins, characterNames, Duration.ofMinutes(10))
+    val (heatData, times) = loginsToHeatData(logins, characterNames, Duration.ofMinutes(1))
     val nLabels = 33
     val parsedTimes = times.zipWithIndex.map { case (t, i) =>
       if (i % (times.length / nLabels) == 0) t.format(DateTimeFormatter.ofPattern("HH:mm")) else " "

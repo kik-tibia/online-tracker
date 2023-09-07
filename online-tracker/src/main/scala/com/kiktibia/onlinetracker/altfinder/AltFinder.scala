@@ -6,7 +6,7 @@ import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.config.{AppConfig, DatabaseConfig}
 import fs2.Stream
-import natchez.Trace.Implicits.noop
+import org.typelevel.otel4s.trace.Tracer
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
@@ -18,6 +18,7 @@ import scala.concurrent.duration.*
 object AltFinder extends IOApp {
 
   given Logger[IO] = Slf4jLogger.getLogger[IO]
+  given Tracer[IO] = Tracer.noop
 
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>
@@ -33,10 +34,12 @@ object AltFinder extends IOApp {
         val repo = new AltFinderSkunkRepo(s)
         val service = new AltFinderService(repo)
 
-        // val from = OffsetDateTime.parse("2023-06-15T10:00:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).some
-        val from = OffsetDateTime.now().minusDays(5).some
+        val from = OffsetDateTime.parse("2023-01-01T10:00:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).some
+        // val to = OffsetDateTime.parse("2023-08-10T10:00:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).some
         // val from = None
+        // val from = OffsetDateTime.now().minusDays(20).some
         val to = None
+
         for
           _ <- Logger[IO].info("Running alt finder")
           _ <- service.findAndPrintAlts(List("kikaro"), from, to)

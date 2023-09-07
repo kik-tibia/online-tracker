@@ -7,7 +7,7 @@ import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerSkunkRepo
 import com.kiktibia.onlinetracker.tracker.service.OnlineTrackerService
 import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataHttp4sClient
 import fs2.Stream
-import natchez.Trace.Implicits.noop
+import org.typelevel.otel4s.trace.Tracer
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
@@ -17,16 +17,17 @@ import scala.concurrent.duration.*
 object Main extends IOApp {
 
   given Logger[IO] = Slf4jLogger.getLogger[IO]
+  given Tracer[IO] = Tracer.noop
 
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.databaseConfig.load[IO].flatMap { cfg =>
-      val session: Resource[IO, Session[IO]] =
-        Session.single(
-          host = cfg.host,
-          port = cfg.port,
-          user = cfg.user,
-          database = cfg.database,
-          password = cfg.password.some)
+      val session: Resource[IO, Session[IO]] = Session.single(
+        host = cfg.host,
+        port = cfg.port,
+        user = cfg.user,
+        database = cfg.database,
+        password = cfg.password.some
+      )
 
       session.use { s =>
         val repo = new OnlineTrackerSkunkRepo(s)
@@ -35,10 +36,9 @@ object Main extends IOApp {
           val service = new OnlineTrackerService(repo, tibiaDataClient)
 
           Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
-            service.updateDataForWorld("Nefera")
-              .handleErrorWith { e =>
-                Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")
-              }
+            service.updateDataForWorld("Nefera").handleErrorWith { e =>
+              Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")
+            }
           }.compile.drain.map(_ => ExitCode.Success)
         }
       }

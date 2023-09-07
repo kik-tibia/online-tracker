@@ -39,7 +39,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
     for
       history <- repo.getCharacterHistories(characterNames, from, to)
       _ <- history.map(i => Logger[F].info(i.toString)).sequence
-      _ = LoginPlotter.plot(history)
+    // _ = LoginPlotter.plot(history)
     yield ()
   }
 
@@ -109,8 +109,18 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
   }
 
   private def countAdjacencies(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Int = {
-    mainHistory.count(m => other.exists(o => o.start == m.end)) +
-      mainHistory.count(m => other.exists(o => m.start == o.end))
+    val dist = 0 // Acceptable distance between logouts and logins. Might overcount if set too high.
+    mainHistory.count { m =>
+      other.exists { o =>
+        val diff = o.start - m.end
+        diff >= 0 && diff <= dist
+      }
+    } + mainHistory.count { m =>
+      other.exists { o =>
+        val diff = m.start - o.end
+        diff >= 0 && diff <= dist
+      }
+    }
   }
 
 }

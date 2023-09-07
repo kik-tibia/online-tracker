@@ -11,7 +11,7 @@ object Model {
 
     extension (d: OffsetDateTime)
       private def atLocal: String =
-        // d.atZoneSameInstant(ZoneId.of("Brazil/East")) .toLocalDateTime .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        // d.atZoneSameInstant(ZoneId.of("Brazil/East")).toLocalDateTime .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         d.atZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime
           .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
   }

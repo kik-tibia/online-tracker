@@ -34,7 +34,7 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
     (from, to) match {
       case (Some(f), Some(t)) =>
         val q = sql"$baseFragment $joinFragment $charFragment $fromToFragment".query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ (f ~ t))
+        prepareToList(q, (cl, f, t))
       case (Some(f), None) =>
         val q = sql"$baseFragment $joinFragment $charFragment $fromFragment".query(onlineSegmentDecoder)
         prepareToList(q, cl ~ f)
@@ -77,17 +77,17 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
         val q =
           sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromToFragment) $fromToFragment"
             .query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ (f ~ t) ~ (f ~ t))
+        prepareToList(q, (cl, (f, t), f, t))
       case (Some(f), None) =>
         val q =
           sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $fromFragment) $fromFragment"
             .query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ f ~ f)
+        prepareToList(q, (cl, f, f))
       case (None, Some(t)) =>
         val q =
           sql"$baseFragment $joinFragment $whereInFragment ($innerFragment $innerJoinFragment $charFragment $toFragment) $toFragment"
             .query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ t ~ t)
+        prepareToList(q, (cl, t, t))
       case (None, None) =>
         val q = sql"$baseFragment $whereInFragment ($innerFragment $charFragment)".query(onlineSegmentDecoder)
         prepareToList(q, cl)
@@ -125,7 +125,7 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
     (from, to) match {
       case (Some(f), Some(t)) =>
         val q = sql"$baseFragment $fromToFragment $orderFragment".query(onlineDateSegmentDecoder)
-        prepareToList(q, cl ~ (f ~ t))
+        prepareToList(q, (cl, f, t))
       case (Some(f), None) =>
         val q = sql"$baseFragment $fromFragment $orderFragment".query(onlineDateSegmentDecoder)
         prepareToList(q, cl ~ f)

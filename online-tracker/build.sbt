@@ -2,10 +2,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "3.3.0"
 
-lazy val root = (project in file("."))
-  .settings(
-    name := "online-tracker"
-  )
+lazy val root = (project in file(".")).settings(name := "online-tracker")
 
 enablePlugins(DockerPlugin)
 enablePlugins(JavaAppPackaging)
@@ -30,11 +27,9 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-literal" % "0.14.3"
 )
 
-libraryDependencies ++= Seq(
-  "org.typelevel" %% "log4cats-slf4j" % "2.5.0"
-)
+libraryDependencies ++= Seq("org.typelevel" %% "log4cats-slf4j" % "2.5.0")
 
-libraryDependencies += "org.tpolecat" %% "skunk-core" % "0.5.1"
+libraryDependencies += "org.tpolecat" %% "skunk-core" % "1.0.0-M1"
 libraryDependencies += "org.apache.commons" % "commons-text" % "1.9"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10"
