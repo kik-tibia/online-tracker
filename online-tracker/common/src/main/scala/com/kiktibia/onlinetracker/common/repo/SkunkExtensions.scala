@@ -1,4 +1,4 @@
-package com.kiktibia.onlinetracker.repo
+package com.kiktibia.onlinetracker.common.repo
 
 import cats.Monad
 import cats.effect.kernel.*

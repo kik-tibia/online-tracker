@@ -3,7 +3,7 @@ package com.kiktibia.onlinetracker.altfinder.repo
 import cats.Monad
 import cats.effect.kernel.Concurrent
 import com.kiktibia.onlinetracker.altfinder.repo.Model.*
-import com.kiktibia.onlinetracker.repo.SkunkExtensions
+import com.kiktibia.onlinetracker.common.repo.SkunkExtensions
 import skunk.*
 import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}

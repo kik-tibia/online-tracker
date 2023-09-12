@@ -1,4 +1,4 @@
-package com.kiktibia.onlinetracker.config
+package com.kiktibia.onlinetracker.common.config
 
 import cats.syntax.all.*
 import ciris.*
@@ -12,6 +12,4 @@ object AppConfig {
     env("DB_PASSWORD").as[String]
   ).parMapN(DatabaseConfig.apply)
 }
-final case class DatabaseConfig(
-  host: String, port: Int, user: String, database: String, password: String
-)
+final case class DatabaseConfig(host: String, port: Int, user: String, database: String, password: String)

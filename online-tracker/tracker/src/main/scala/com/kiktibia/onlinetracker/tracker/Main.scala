@@ -2,7 +2,7 @@ package com.kiktibia.onlinetracker.tracker
 
 import cats.effect.*
 import cats.syntax.all.*
-import com.kiktibia.onlinetracker.config.{AppConfig, DatabaseConfig}
+import com.kiktibia.onlinetracker.common.config.{AppConfig, DatabaseConfig}
 import com.kiktibia.onlinetracker.tracker.repo.OnlineTrackerSkunkRepo
 import com.kiktibia.onlinetracker.tracker.service.OnlineTrackerService
 import com.kiktibia.onlinetracker.tracker.tibiadata.TibiaDataHttp4sClient
