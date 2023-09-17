@@ -25,6 +25,8 @@ object AltFinderService {
     override def toString: String = s"${characterName.getOrElse("")}: $adjacencies / $clashes / $logins"
   }
 
+  case class AltsResults(searchedCharacters: List[String], mainLogins: Int, adjacencies: List[CharacterAdjacencies])
+
 }
 
 class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
@@ -47,7 +49,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
       characterNames: List[String],
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime]
-  ): F[Unit] = {
+  ): F[AltsResults] = {
     for
       mainSegments <- repo.getOnlineTimes(characterNames, from, to)
       _ <- Logger[F].info(s"Got online times for searched characters (${mainSegments.length} rows)")
@@ -59,8 +61,9 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
       adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false).take(20)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
+      altsResults = AltsResults(characterNames, mainSegments.length, results)
       _ <- results.map(i => Logger[F].info(i.toString)).sequence
-    yield ()
+    yield altsResults
   }
 
   def checkForClashes(
@@ -88,7 +91,12 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
     val characterHistories = others.groupBy(_.characterId).toList.map(i => CharacterLoginHistory(i._1, i._2))
 
     characterHistories.flatMap { h =>
-      val clashes = countClashes(mainHistory, h.segments)
+      val clashes =
+        if (includeClashes) { countClashes(mainHistory, h.segments) }
+        else {
+          val clashes = hasClashes(mainHistory, h.segments)
+          if (clashes) -1 else 0
+        }
       if clashes == 0 || includeClashes then
         Some(CharacterAdjacencies(
           h.characterId,
@@ -99,6 +107,13 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
         ))
       else None
     }.sortBy(-_.adjacencies)
+  }
+
+  private def hasClashes(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Boolean = {
+    // Set to 1 for for an acceptable overlap of 1 minute
+    // e.g. if you x-log then switch account, both chars could be online at the same time for 1 minute
+    val overlap = 0
+    mainHistory.exists { m => other.exists { o => o.start < m.end - overlap && m.start < o.end - overlap } }
   }
 
   private def countClashes(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Int = {

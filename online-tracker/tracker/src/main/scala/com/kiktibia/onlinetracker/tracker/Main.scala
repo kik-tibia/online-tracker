@@ -20,13 +20,14 @@ object Main extends IOApp {
   given Tracer[IO] = Tracer.noop
 
   override def run(args: List[String]): IO[ExitCode] = {
-    AppConfig.databaseConfig.load[IO].flatMap { cfg =>
+    AppConfig.config.load[IO].flatMap { cfg =>
+      val dbCfg = cfg.database
       val session: Resource[IO, Session[IO]] = Session.single(
-        host = cfg.host,
-        port = cfg.port,
-        user = cfg.user,
-        database = cfg.database,
-        password = cfg.password.some
+        host = dbCfg.host,
+        port = dbCfg.port,
+        user = dbCfg.user,
+        database = dbCfg.database,
+        password = dbCfg.password.some
       )
 
       session.use { s =>

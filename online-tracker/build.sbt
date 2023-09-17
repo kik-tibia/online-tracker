@@ -16,9 +16,10 @@ lazy val tracker = (project in file("tracker")).enablePlugins(JavaAppPackaging, 
 
 lazy val altfinder = project.in(file("altfinder")).enablePlugins(JavaAppPackaging, DockerPlugin).settings(
   name := "alt-finder",
-  Compile / mainClass := Some("com.kiktibia.onlinetracker.altfinder.AltFinder"),
+  Compile / mainClass := Some("com.kiktibia.onlinetracker.altfinder.BotApp"),
   Compile / doc / sources := Seq.empty,
-  libraryDependencies ++= altfinderDependencies
+  libraryDependencies ++= altfinderDependencies,
+  dockerExposedPorts += 443
 ).dependsOn(common)
 
 lazy val http4sVersion = "1.0.0-M38"
@@ -32,6 +33,7 @@ lazy val skunkVersion = "1.0.0-M1"
 lazy val commonsTextVersion = "1.9"
 lazy val javaSizeofVersion = "0.0.5"
 lazy val xchartVersion = "3.8.0"
+lazy val jdaVersion = "5.0.0-beta.13"
 
 lazy val commonDependencies = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
@@ -52,5 +54,8 @@ lazy val trackerDependencies = Seq(
   "org.http4s" %% "http4s-blaze-client" % http4sVersion
 )
 
-lazy val altfinderDependencies =
-  Seq("com.carrotsearch" % "java-sizeof" % javaSizeofVersion, "org.knowm.xchart" % "xchart" % xchartVersion)
+lazy val altfinderDependencies = Seq(
+  "com.carrotsearch" % "java-sizeof" % javaSizeofVersion,
+  "org.knowm.xchart" % "xchart" % xchartVersion,
+  "net.dv8tion" % "JDA" % jdaVersion
+)
