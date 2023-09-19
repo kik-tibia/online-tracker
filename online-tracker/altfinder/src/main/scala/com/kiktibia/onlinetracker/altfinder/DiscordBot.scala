@@ -35,8 +35,8 @@ class DiscordBot(cfg: BotConfig, service: AltFinderService[IO]) {
   jda.awaitReady()
   println("JDA ready")
 
-  private val testGuild = jda.getGuildById("")
-  List(testGuild.updateCommands(), jda.updateCommands()).map(updateCommands)
+  // private val testGuild = jda.getGuildById("")
+  List(jda.updateCommands()).map(updateCommands)
 
   private def updateCommands(c: CommandListUpdateAction): Unit = {
     c.addCommands(commands.map(_.command).asJava).complete()
