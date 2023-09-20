@@ -51,6 +51,8 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
       to: Option[OffsetDateTime]
   ): F[AltsResults] = {
     for
+      _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
+      _ <- Logger[F].info(s"Date range: $from - $to")
       mainSegments <- repo.getOnlineTimes(characterNames, from, to)
       _ <- Logger[F].info(s"Got online times for searched characters (${mainSegments.length} rows)")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(mainSegments))

@@ -62,7 +62,7 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
     val embed = new EmbedBuilder()
     embed.setTitle("Alt finder").setColor(embedColour)
       .addField("Searched characters", results.searchedCharacters.mkString(", "), false)
-      .addField("Date range", dateMessage, false)
+      .addField("Total logins", results.mainLogins.toString(), false).addField("Date range", dateMessage, false)
       .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
   }
 
