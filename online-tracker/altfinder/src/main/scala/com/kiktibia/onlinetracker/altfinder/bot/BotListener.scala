@@ -1,8 +1,8 @@
 package com.kiktibia.onlinetracker.altfinder.bot
 
+import com.kiktibia.onlinetracker.altfinder.bot.command.Command
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import com.kiktibia.onlinetracker.altfinder.bot.command.Command
 
 class BotListener(commands: List[Command]) extends ListenerAdapter {
 
@@ -12,7 +12,7 @@ class BotListener(commands: List[Command]) extends ListenerAdapter {
         event.deferReply().queue()
         val embed = command.handleEvent(event)
         event.getHook().sendMessageEmbeds(embed).queue()
-      case None => println("Command not found: ${event.getName}")
+      case None => println(s"Command not found: ${event.getName}")
     }
   }
 

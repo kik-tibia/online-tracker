@@ -2,15 +2,13 @@ package com.kiktibia.onlinetracker.altfinder
 
 import cats.effect.*
 import cats.syntax.all.*
-
-import org.typelevel.otel4s.trace.Tracer
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import com.kiktibia.onlinetracker.common.config.AppConfig
-import com.kiktibia.onlinetracker.common.config.Config
-import skunk.Session
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
+import com.kiktibia.onlinetracker.common.config.AppConfig
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.otel4s.trace.Tracer
+import skunk.Session
 
 object BotApp extends IOApp {
 

@@ -11,6 +11,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
 import com.kiktibia.onlinetracker.altfinder.LoginPlotter
+import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
 
 object AltFinderService {
   case class CharacterLoginHistory(characterId: Long, segments: List[OnlineSegment])
@@ -33,16 +34,16 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
 
   given Logger[F] = Slf4jLogger.getLogger[F]
 
-  def printLoginHistories(
+  def onlineHistories(
       characterNames: List[String],
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime]
-  ): F[Unit] = {
+  ): F[List[OnlineDateSegment]] = {
     for
       history <- repo.getCharacterHistories(characterNames, from, to)
       _ <- history.map(i => Logger[F].info(i.toString)).sequence
     // _ = LoginPlotter.plot(history)
-    yield ()
+    yield history
   }
 
   def findAndPrintAlts(
