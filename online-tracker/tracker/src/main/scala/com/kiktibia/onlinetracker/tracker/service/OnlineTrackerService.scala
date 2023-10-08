@@ -13,8 +13,9 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataClient: TibiaDataClientAlg[F])
-  (using FA: Applicative[F]) {
+class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataClient: TibiaDataClientAlg[F])(using
+    FA: Applicative[F]
+) {
 
   given Logger[F] = Slf4jLogger.getLogger[F]
 
@@ -27,8 +28,9 @@ class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataC
       worldId <- repo.getWorld(world).map(_.id)
       latestSaveTime <- repo.getLatestSaveTime(worldId)
 
-      _ <- if !latestSaveTime.contains(tdTime) then updateOnlineList(worldId, worldResponse, tdTime)
-      else Logger[F].info("Not proceeding, received cached response from TibiaData")
+      _ <-
+        if !latestSaveTime.contains(tdTime) then updateOnlineList(worldId, worldResponse, tdTime)
+        else Logger[F].info("Not proceeding, received cached response from TibiaData")
 
       _ <- Logger[F].info("--- end ---")
     yield ()
@@ -40,7 +42,7 @@ class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataC
       dbOnlineRows <- repo.getAllOnline(worldId)
 
       dbOnlineNames = dbOnlineRows.map(_.name)
-      tdOnlineNames = worldResponse.worlds.world.online_players.getOrElse(Nil).map(_.name)
+      tdOnlineNames = worldResponse.world.online_players.getOrElse(Nil).map(_.name)
 
       loggedOff = dbOnlineNames.filterNot(i => tdOnlineNames.contains(i)).sorted
       loggedOn = tdOnlineNames.filterNot(i => dbOnlineNames.contains(i)).sorted
@@ -73,14 +75,14 @@ class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataC
   private def insertOrRenameCharacter(name: String, time: OffsetDateTime): F[Unit] = {
     // Inserts a new character unless if the character is was renamed, in which case handles the rename
     for
-      formerNames <- tibiaDataClient.getCharacter(name).map(_.characters.character.former_names.getOrElse(Nil))
+      formerNames <- tibiaDataClient.getCharacter(name).map(_.character.character.former_names.getOrElse(Nil))
       formerNamesCharacters <- formerNames.map(i => repo.getCharacter(i)).sequence.map(_.flatten)
       _ <- formerNamesCharacters.headOption match {
         case Some(c) =>
           val charId = c.id.get
           for
-            _ <- repo.insertCharacterNameHistory(
-              CharacterNameHistoryRow(None, charId, c.name, c.currentNameSince, time))
+            _ <- repo
+              .insertCharacterNameHistory(CharacterNameHistoryRow(None, charId, c.name, c.currentNameSince, time))
             _ <- repo.updateCharacterName(charId, name, time)
           yield ()
         case None => repo.insertCharacter(CharacterRow(None, name, time, time))

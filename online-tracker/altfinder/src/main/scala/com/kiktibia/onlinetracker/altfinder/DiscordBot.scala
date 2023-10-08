@@ -1,5 +1,6 @@
 package com.kiktibia.onlinetracker.altfinder
 
+import cats.effect.IO
 import cats.implicits.*
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.altfinder.bot.BotListener
@@ -10,7 +11,6 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 
 import scala.jdk.CollectionConverters.*
-import cats.effect.IO
 
 class DiscordBot(cfg: BotConfig, service: AltFinderService[IO]) {
 

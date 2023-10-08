@@ -17,20 +17,17 @@ import scala.concurrent.duration.*
 
 object TibiaDataHttp4sClient {
   private val retryPolicy: RetryPolicy[IO] = (_, result, unsuccessfulAttempts) => {
-    if unsuccessfulAttempts > 2 then None
-    else if result.exists(_.status == Status.Ok) then None
-    else 1.second.some
+    if unsuccessfulAttempts > 2 then None else if result.exists(_.status == Status.Ok) then None else 1.second.some
   }
 
   val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withRequestTimeout(10.seconds).resource
-    .map(GZip()(_))
-    .map(Retry[IO](retryPolicy)(_))
+    .map(GZip()(_)).map(Retry[IO](retryPolicy)(_))
 }
 
 class TibiaDataHttp4sClient[F[_]: Sync](client: Client[F])(using Concurrent[F])
-  extends TibiaDataClientAlg[F] with TibiaDataDecoders {
+    extends TibiaDataClientAlg[F] with TibiaDataDecoders {
 
-  private val apiRoot = uri"https://api.tibiadata.com/v3"
+  private val apiRoot = uri"https://api.tibiadata.com/v4"
 
   def getWorld(world: String): F[WorldResponse] = {
     val target = apiRoot / "world" / world
