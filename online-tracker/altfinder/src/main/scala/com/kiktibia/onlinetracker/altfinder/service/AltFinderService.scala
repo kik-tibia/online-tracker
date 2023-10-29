@@ -3,15 +3,21 @@ package com.kiktibia.onlinetracker.altfinder.service
 import cats.effect.Sync
 import cats.implicits.*
 import com.carrotsearch.sizeof.RamUsageEstimator
+import com.kiktibia.onlinetracker.altfinder.LoginPlotter
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper.CharacterSales
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraperClientAlg
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderRepoAlg
+import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
 import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineSegment
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
+import java.time.LocalTime
 import java.time.OffsetDateTime
-import com.kiktibia.onlinetracker.altfinder.LoginPlotter
-import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 object AltFinderService {
   case class CharacterLoginHistory(characterId: Long, segments: List[OnlineSegment])
@@ -26,11 +32,18 @@ object AltFinderService {
     override def toString: String = s"${characterName.getOrElse("")}: $adjacencies / $clashes / $logins"
   }
 
-  case class AltsResults(searchedCharacters: List[String], mainLogins: Int, adjacencies: List[CharacterAdjacencies])
+  case class AltsResults(
+      searchedCharacters: List[String],
+      searchedFrom: Option[OffsetDateTime],
+      searchedTo: Option[OffsetDateTime],
+      mainLogins: Int,
+      adjacencies: List[CharacterAdjacencies],
+      sales: List[CharacterSales]
+  )
 
 }
 
-class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
+class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: BazaarScraper[F]) {
 
   given Logger[F] = Slf4jLogger.getLogger[F]
 
@@ -54,17 +67,22 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F]) {
     for
       _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
       _ <- Logger[F].info(s"Date range: $from - $to")
-      mainSegments <- repo.getOnlineTimes(characterNames, from, to)
+      dates <- characterNames.map(bazaarScraper.characterSales).sequence
+      latestSale = BazaarScraper.latestSale(dates)
+      tradedFrom = from.orElse {
+        latestSale.map(l => ZonedDateTime.of(l, LocalTime.of(10, 0), ZoneId.of("Europe/Berlin")).toOffsetDateTime())
+      }
+      mainSegments <- repo.getOnlineTimes(characterNames, tradedFrom, to)
       _ <- Logger[F].info(s"Got online times for searched characters (${mainSegments.length} rows)")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(mainSegments))
-      matchesToCheck <- repo.getPossibleMatches(characterNames, from, to)
+      matchesToCheck <- repo.getPossibleMatches(characterNames, tradedFrom, to)
       _ <- Logger[F].info("Got online times for possible matched characters")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(matchesToCheck))
       _ <- Logger[F].info(s"${matchesToCheck.length} rows to analyse")
       adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false).take(20)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
-      altsResults = AltsResults(characterNames, mainSegments.length, results)
+      altsResults = AltsResults(characterNames, tradedFrom, to, mainSegments.length, results, dates)
       _ <- results.map(i => Logger[F].info(i.toString)).sequence
     yield altsResults
   }

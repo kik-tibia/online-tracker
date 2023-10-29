@@ -2,6 +2,8 @@ package com.kiktibia.onlinetracker.altfinder
 
 import cats.effect.*
 import cats.syntax.all.*
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraperHttp4sClient
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.common.config.AppConfig
@@ -27,13 +29,17 @@ object BotApp extends IOApp {
       )
 
       session.use { s =>
-        val program = {
-          val repo = new AltFinderSkunkRepo(s)
-          val service = new AltFinderService(repo)
-          val bot = new DiscordBot(cfg.bot, service)
-          IO.unit
+        BazaarScraperHttp4sClient.clientResource.use { client =>
+          val program = {
+            val bazaarScraperClient = new BazaarScraperHttp4sClient(client)
+            val bazaarScraper = new BazaarScraper(bazaarScraperClient)
+            val repo = new AltFinderSkunkRepo(s)
+            val service = new AltFinderService(repo, bazaarScraper)
+            val bot = new DiscordBot(cfg.bot, service)
+            IO.unit
+          }
+          program.toResource.useForever.map(_ => ExitCode.Success)
         }
-        program.toResource.useForever.map(_ => ExitCode.Success)
       }
     }
 

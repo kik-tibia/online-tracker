@@ -2,9 +2,11 @@ package com.kiktibia.onlinetracker.altfinder.bot.command
 
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.MessageEmbed.Field
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
@@ -54,15 +56,30 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
       case (Right(from), Right(to)) =>
         val results = service.findAndPrintAlts(charList, from, to).unsafeRunSync()
 
-        val dateMessage = (from, to) match {
+        val dateMessage = (results.searchedFrom, results.searchedTo) match {
           case (None, None) => "Max range"
           case (None, Some(t)) => s"Until ${t.toLocalDate()}"
           case (Some(f), None) => s"From ${f.toLocalDate()}"
           case (Some(f), Some(t)) => s"From ${f.toLocalDate()} until ${t.toLocalDate()}"
         }
 
+        val tradedField = results.sales.flatMap(_.saleDates) match
+          case Nil => None
+          case sales =>
+            val salesList = results.sales.flatMap { s =>
+              s.saleDates match
+                case Nil => None
+                case dates => Some(s"**${s.name}**: ${s.saleDates.mkString(", ")}")
+            }
+            val dateMessage = from match
+              case None => "Setting the `from` date to be the date of the latest sale."
+              case Some(_) => "Using `from` date provided. Results may be inaccurate."
+            val message = s"The following characters have been traded:\n${salesList.mkString("\n")}\n$dateMessage"
+            Some(new Field("Traded character detected", message, false))
+
         embedBuilder.addField("Searched characters", results.searchedCharacters.mkString(", "), false)
-          .addField("Total logins", results.mainLogins.toString(), false).addField("Date range", dateMessage, false)
+          .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), false)
+          .addField("Date range", dateMessage, false)
           .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
       case _ =>
         val errors = List(parseFrom, parseTo).map(_.left.toOption).flatten.mkString("\n")
@@ -70,6 +87,11 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
 
     }
   }
+
+  extension (eb: EmbedBuilder)
+    private def addFieldOption(field: Option[Field]) = field match
+      case Some(f) => eb.addField(f)
+      case None => eb
 
   private def parseDateOptionMapping(
       options: List[OptionMapping],

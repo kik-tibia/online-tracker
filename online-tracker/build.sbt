@@ -1,4 +1,4 @@
-ThisBuild / version := "1.1.0"
+ThisBuild / version := "1.2.0"
 ThisBuild / scalaVersion := "3.3.0"
 
 lazy val root = (project in file(".")).aggregate(tracker, altfinder)
@@ -34,6 +34,7 @@ lazy val commonsTextVersion = "1.9"
 lazy val javaSizeofVersion = "0.0.5"
 lazy val xchartVersion = "3.8.0"
 lazy val jdaVersion = "5.0.0-beta.13"
+lazy val jsoupVersion = "1.16.2"
 
 lazy val commonDependencies = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
@@ -44,18 +45,20 @@ lazy val commonDependencies = Seq(
   "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
   "ch.qos.logback" % "logback-classic" % logbackVersion,
   "org.tpolecat" %% "skunk-core" % skunkVersion,
-  "org.apache.commons" % "commons-text" % commonsTextVersion
-)
-
-lazy val trackerDependencies = Seq(
+  "org.apache.commons" % "commons-text" % commonsTextVersion,
   "org.http4s" %% "http4s-circe" % http4sVersion,
   "org.http4s" %% "http4s-dsl" % http4sVersion,
-  "org.http4s" %% "http4s-blaze-server" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion
 )
+
+lazy val trackerDependencies = Seq("org.http4s" %% "http4s-blaze-server" % http4sVersion)
 
 lazy val altfinderDependencies = Seq(
   "com.carrotsearch" % "java-sizeof" % javaSizeofVersion,
   "org.knowm.xchart" % "xchart" % xchartVersion,
-  "net.dv8tion" % "JDA" % jdaVersion
+  "net.dv8tion" % "JDA" % jdaVersion,
+  "org.http4s" %% "http4s-circe" % http4sVersion,
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+  "org.jsoup" % "jsoup" % jsoupVersion
 )
