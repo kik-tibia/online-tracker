@@ -23,7 +23,7 @@ object BazaarScraperHttp4sClient {
     if unsuccessfulAttempts > 2 then None else if result.exists(_.status == Status.Ok) then None else 1.second.some
   }
 
-  val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withRequestTimeout(10.seconds).resource
+  val clientResource: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].withRequestTimeout(5.seconds).resource
     .map(GZip()(_)).map(Retry[IO](retryPolicy)(_))
 }
 

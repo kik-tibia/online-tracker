@@ -5,7 +5,7 @@ import cats.implicits.*
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.kiktibia.onlinetracker.altfinder.LoginPlotter
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
-import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper.CharacterSales
+import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper.*
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraperClientAlg
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderRepoAlg
 import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
@@ -38,7 +38,7 @@ object AltFinderService {
       searchedTo: Option[OffsetDateTime],
       mainLogins: Int,
       adjacencies: List[CharacterAdjacencies],
-      sales: List[CharacterSales]
+      sales: CharacterSalesList
   )
 
 }
@@ -67,10 +67,10 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
     for
       _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
       _ <- Logger[F].info(s"Date range: $from - $to")
-      dates <- characterNames.map(bazaarScraper.characterSales).sequence
-      latestSale = BazaarScraper.latestSale(dates)
+      salesList <- characterNames.map(bazaarScraper.characterSales).sequence.map(CharacterSalesList(_))
       tradedFrom = from.orElse {
-        latestSale.map(l => ZonedDateTime.of(l, LocalTime.of(10, 0), ZoneId.of("Europe/Berlin")).toOffsetDateTime())
+        salesList.latestSale
+          .map(l => ZonedDateTime.of(l, LocalTime.of(10, 0), ZoneId.of("Europe/Berlin")).toOffsetDateTime())
       }
       mainSegments <- repo.getOnlineTimes(characterNames, tradedFrom, to)
       _ <- Logger[F].info(s"Got online times for searched characters (${mainSegments.length} rows)")
@@ -82,7 +82,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false).take(20)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
-      altsResults = AltsResults(characterNames, tradedFrom, to, mainSegments.length, results, dates)
+      altsResults = AltsResults(characterNames, tradedFrom, to, mainSegments.length, results, salesList)
       _ <- results.map(i => Logger[F].info(i.toString)).sequence
     yield altsResults
   }

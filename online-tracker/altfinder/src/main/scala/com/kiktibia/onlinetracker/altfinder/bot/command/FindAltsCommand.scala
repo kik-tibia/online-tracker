@@ -63,13 +63,16 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
           case (Some(f), Some(t)) => s"From ${f.toLocalDate()} until ${t.toLocalDate()}"
         }
 
-        val tradedField = results.sales.flatMap(_.saleDates) match
-          case Nil => None
-          case sales =>
-            val salesList = results.sales.flatMap { s =>
+        val bazaarScraperError = "Error accessing tibiavip.app"
+        val tradedField = (results.sales.allSales, results.sales.numberOfErrors) match
+          case (Nil, 0) => None
+          case (Nil, _) => Some(new Field("Couldn't check if traded", bazaarScraperError, false))
+          case (sales, _) =>
+            val salesList = results.sales.characterSales.flatMap { s =>
               s.saleDates match
-                case Nil => None
-                case dates => Some(s"**${s.name}**: ${s.saleDates.mkString(", ")}")
+                case Right(Nil) => None
+                case Right(dates) => Some(s"**${s.name}**: ${dates.mkString(", ")}")
+                case Left(_) => Some(s"**${s.name}**: $bazaarScraperError")
             }
             val dateMessage = from match
               case None => "Setting the `from` date to be the date of the latest sale."
