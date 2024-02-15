@@ -69,7 +69,9 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
     for
       _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
       _ <- Logger[F].info(s"Date range: $from - $to")
-      salesList <- characterNames.map(bazaarScraper.characterSales).sequence.map(CharacterSalesList(_))
+      pastNames <- characterNames.map(n => repo.getPastCharacterNames(n).map(l => n :: l)).sequence
+      _ <- Logger[F].info(pastNames.toString)
+      salesList <- pastNames.map(bazaarScraper.multipleCharacterSales).sequence.map(CharacterSalesList(_))
       tradedFrom = from.orElse {
         salesList.latestSale
           .map(l => ZonedDateTime.of(l, LocalTime.of(10, 0), ZoneId.of("Europe/Berlin")).toOffsetDateTime())

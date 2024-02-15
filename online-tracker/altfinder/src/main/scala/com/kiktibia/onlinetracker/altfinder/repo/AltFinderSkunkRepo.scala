@@ -148,4 +148,12 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
     }
   }
 
+  override def getPastCharacterNames(characterName: String): F[List[String]] = {
+    val q = sql"""
+      SELECT cnh.name FROM character c JOIN character_name_history cnh ON c.id = cnh.character_id
+      WHERE lower(c.name) = $varchar
+    """.query(varchar)
+    prepareToList(q, characterName.toLowerCase)
+  }
+
 }

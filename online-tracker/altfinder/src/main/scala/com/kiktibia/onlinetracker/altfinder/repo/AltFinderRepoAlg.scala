@@ -25,4 +25,6 @@ trait AltFinderRepoAlg[F[_]] {
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime]
   ): F[List[OnlineDateSegment]]
+
+  def getPastCharacterNames(characterName: String): F[List[String]]
 }

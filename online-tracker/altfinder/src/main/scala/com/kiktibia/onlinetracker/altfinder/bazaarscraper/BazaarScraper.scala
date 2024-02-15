@@ -27,7 +27,15 @@ object BazaarScraper {
 
 class BazaarScraper[F[_]: Sync](client: BazaarScraperClientAlg[F]) {
 
-  def characterSales(name: String): F[CharacterSales] = {
+  def multipleCharacterSales(names: List[String]): F[CharacterSales] = {
+    for
+      allSales <- names.map(singleCharacterSales).sequence
+      dates = allSales.flatMap(_.saleDates.getOrElse(Nil))
+      errored = allSales.map(_.saleDates).find(_.isLeft)
+    yield CharacterSales(allSales.head.name, errored.getOrElse(Right(dates)))
+  }
+
+  private def singleCharacterSales(name: String): F[CharacterSales] = {
     for
       html <- client.searchCharacter(name).map(Right(_)).handleError { case e =>
         Left(BazaarScraperError(e.getMessage()))
