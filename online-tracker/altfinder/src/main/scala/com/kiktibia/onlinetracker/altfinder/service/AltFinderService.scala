@@ -63,7 +63,8 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       characterNames: List[String],
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime],
-      distance: Option[Int]
+      distance: Option[Int],
+      includeClashes: Boolean
   ): F[AltsResults] = {
     for
       _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
@@ -80,7 +81,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       _ <- Logger[F].info("Got online times for possible matched characters")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(matchesToCheck))
       _ <- Logger[F].info(s"${matchesToCheck.length} rows to analyse")
-      adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false, distance.getOrElse(0)).take(20)
+      adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes, distance.getOrElse(0)).take(20)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
       altsResults = AltsResults(characterNames, tradedFrom, to, mainSegments.length, results, salesList)

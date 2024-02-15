@@ -27,7 +27,7 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
   override val command: SlashCommandData = Commands.slash("alts", "A list of possible alts for a list of characters")
     .addOptions(
       List(
-        new OptionData(OptionType.STRING, "characters", "A list of characters to check, comma separated", true, false),
+        new OptionData(OptionType.STRING, "characters", "A list of characters to check, comma separated.", true, false),
         new OptionData(
           OptionType.STRING,
           "from",
@@ -44,6 +44,13 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
           "The distance in minutes between log off / log on of two characters to count as a hit. Defaults to 0.",
           false,
           false
+        ),
+        new OptionData(
+          OptionType.BOOLEAN,
+          "include-clashes",
+          "Enable this to show clashing characters in the results.",
+          false,
+          false
         )
       ).asJava
     )
@@ -57,12 +64,13 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
     val parseFrom: Either[String, Option[OffsetDateTime]] = parseDateOptionMapping(options, "from")
     val parseTo: Either[String, Option[OffsetDateTime]] = parseDateOptionMapping(options, "to")
     val distance = options.find(_.getName == "distance").map(_.getAsInt())
+    val includeClashes = options.find(_.getName == "include-clashes").map(_.getAsBoolean()).getOrElse(false)
 
     val embedBuilder = (new EmbedBuilder()).setColor(embedColour).setTitle("Alt finder")
 
     (parseFrom, parseTo) match {
       case (Right(from), Right(to)) =>
-        val results = service.findAndPrintAlts(charList, from, to, distance).unsafeRunSync()
+        val results = service.findAndPrintAlts(charList, from, to, distance, includeClashes).unsafeRunSync()
 
         val dateMessage = (results.searchedFrom, results.searchedTo) match {
           case (None, None) => "Max range"
@@ -89,9 +97,10 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
             Some(new Field("Traded character detected", message, false))
 
         embedBuilder.addField("Searched characters", results.searchedCharacters.mkString(", "), false)
-          .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), false)
-          .addFieldOption(distance.map(d => new Field("Adjacency distance (minutes)", d.toString, false)))
-          .addField("Date range", dateMessage, false)
+          .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), true)
+          .addField("Date range", dateMessage, true).addField("\u200b", "\u200b", true)
+          .addField("Adjacency distance", appendMinutes(distance.getOrElse(0)), true)
+          .addField("Include clashes", includeClashes.toString, true).addField("\u200b", "\u200b", true)
           .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
       case _ =>
         val errors = List(parseFrom, parseTo).map(_.left.toOption).flatten.mkString("\n")
@@ -112,5 +121,7 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
     val option: Option[Either[String, OffsetDateTime]] = options.find(_.getName == name).map(optionMappingToSSDateTime)
     option.map(_.right.map(Some(_))).getOrElse(Right(None))
   }
+
+  private def appendMinutes(i: Int) = if (i == 1) s"$i minute" else s"$i minutes"
 
 }
