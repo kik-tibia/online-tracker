@@ -50,7 +50,8 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
   override def getPossibleMatches(
       characterNames: List[String],
       from: Option[OffsetDateTime],
-      to: Option[OffsetDateTime]
+      to: Option[OffsetDateTime],
+      distance: Option[Int]
   ): F[List[OnlineSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
@@ -60,10 +61,19 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
       """
     val joinFragment = sql"JOIN world_save_time w ON o.login_time = w.id"
     val whereInFragment = sql"WHERE o.character_id IN"
+    val adjacencyFragment = distance match {
+      case Some(d) => sql"""
+          ((o1.login_time - o2.logout_time >= 0 AND o1.login_time - o2.logout_time <= #${d.toString})
+           OR (o2.login_time - o1.logout_time >= 0 AND o2.login_time - o1.logout_time <= #${d.toString}))
+        """
+      case None => sql"""
+        (o1.login_time = o2.logout_time OR o1.logout_time = o2.login_time)
+      """
+    }
     val innerFragment = sql"""
         SELECT DISTINCT o2.character_id
         FROM online_history o1
-        JOIN online_history o2 ON (o1.login_time = o2.logout_time OR o1.logout_time = o2.login_time)
+        JOIN online_history o2 ON $adjacencyFragment
         JOIN character c ON o1.character_id = c.id
       """
     val innerJoinFragment = sql"JOIN world_save_time w ON o2.login_time = w.id"

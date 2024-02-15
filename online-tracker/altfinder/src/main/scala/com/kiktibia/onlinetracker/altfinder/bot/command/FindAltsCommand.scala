@@ -37,6 +37,13 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
           OptionType.STRING,
           "to",
           "The date to search until, in YYYY-MM-DD format. Uses Server Save time."
+        ),
+        new OptionData(
+          OptionType.INTEGER,
+          "distance",
+          "The distance in minutes between log off / log on of two characters to count as a hit. Defaults to 0.",
+          false,
+          false
         )
       ).asJava
     )
@@ -49,12 +56,13 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
     val charList = chars.split(",").map(_.trim).toList
     val parseFrom: Either[String, Option[OffsetDateTime]] = parseDateOptionMapping(options, "from")
     val parseTo: Either[String, Option[OffsetDateTime]] = parseDateOptionMapping(options, "to")
+    val distance = options.find(_.getName == "distance").map(_.getAsInt())
 
     val embedBuilder = (new EmbedBuilder()).setColor(embedColour).setTitle("Alt finder")
 
     (parseFrom, parseTo) match {
       case (Right(from), Right(to)) =>
-        val results = service.findAndPrintAlts(charList, from, to).unsafeRunSync()
+        val results = service.findAndPrintAlts(charList, from, to, distance).unsafeRunSync()
 
         val dateMessage = (results.searchedFrom, results.searchedTo) match {
           case (None, None) => "Max range"
@@ -82,6 +90,7 @@ class FindAltsCommand(service: AltFinderService[IO]) extends Command {
 
         embedBuilder.addField("Searched characters", results.searchedCharacters.mkString(", "), false)
           .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), false)
+          .addFieldOption(distance.map(d => new Field("Adjacency distance (minutes)", d.toString, false)))
           .addField("Date range", dateMessage, false)
           .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
       case _ =>

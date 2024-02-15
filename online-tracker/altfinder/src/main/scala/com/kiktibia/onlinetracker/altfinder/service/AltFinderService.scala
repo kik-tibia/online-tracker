@@ -62,7 +62,8 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
   def findAndPrintAlts(
       characterNames: List[String],
       from: Option[OffsetDateTime],
-      to: Option[OffsetDateTime]
+      to: Option[OffsetDateTime],
+      distance: Option[Int]
   ): F[AltsResults] = {
     for
       _ <- Logger[F].info(s"Searching for: ${characterNames.mkString(", ")}")
@@ -75,11 +76,11 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       mainSegments <- repo.getOnlineTimes(characterNames, tradedFrom, to)
       _ <- Logger[F].info(s"Got online times for searched characters (${mainSegments.length} rows)")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(mainSegments))
-      matchesToCheck <- repo.getPossibleMatches(characterNames, tradedFrom, to)
+      matchesToCheck <- repo.getPossibleMatches(characterNames, tradedFrom, to, distance)
       _ <- Logger[F].info("Got online times for possible matched characters")
       _ <- Logger[F].info(RamUsageEstimator.humanSizeOf(matchesToCheck))
       _ <- Logger[F].info(s"${matchesToCheck.length} rows to analyse")
-      adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false).take(20)
+      adj = getAdjacencies(mainSegments, matchesToCheck, includeClashes = false, distance.getOrElse(0)).take(20)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
       altsResults = AltsResults(characterNames, tradedFrom, to, mainSegments.length, results, salesList)
@@ -97,7 +98,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       mainSegments <- repo.getOnlineTimes(characterNames, from, to)
       toCheckSegments <- repo.getOnlineTimes(toCheck, from, to)
       _ <- Logger[F].info(s"${toCheckSegments.length} rows to analyse from ${mainSegments.length} segments")
-      adj = getAdjacencies(mainSegments, toCheckSegments, includeClashes = true)
+      adj = getAdjacencies(mainSegments, toCheckSegments, includeClashes = true, distance = 0)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
       _ <- results.map(i => Logger[F].info(i.toString)).sequence
@@ -107,7 +108,8 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
   private def getAdjacencies(
       mainHistory: List[OnlineSegment],
       others: List[OnlineSegment],
-      includeClashes: Boolean
+      includeClashes: Boolean,
+      distance: Int
   ): List[CharacterAdjacencies] = {
     val characterHistories = others.groupBy(_.characterId).toList.map(i => CharacterLoginHistory(i._1, i._2))
 
@@ -122,7 +124,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
         Some(CharacterAdjacencies(
           h.characterId,
           None,
-          countAdjacencies(mainHistory, h.segments),
+          countAdjacencies(mainHistory, h.segments, distance),
           clashes,
           h.segments.length
         ))
@@ -144,17 +146,17 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
     mainHistory.count { m => other.exists { o => o.start < m.end - overlap && m.start < o.end - overlap } }
   }
 
-  private def countAdjacencies(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Int = {
-    val dist = 0 // Acceptable distance between logouts and logins. Might overcount if set too high.
+  // Distance is the acceptable distance between logouts and logins.
+  private def countAdjacencies(mainHistory: List[OnlineSegment], other: List[OnlineSegment], distance: Int): Int = {
     mainHistory.count { m =>
       other.exists { o =>
         val diff = o.start - m.end
-        diff >= 0 && diff <= dist
+        diff >= 0 && diff <= distance
       }
     } + mainHistory.count { m =>
       other.exists { o =>
         val diff = m.start - o.end
-        diff >= 0 && diff <= dist
+        diff >= 0 && diff <= distance
       }
     }
   }
