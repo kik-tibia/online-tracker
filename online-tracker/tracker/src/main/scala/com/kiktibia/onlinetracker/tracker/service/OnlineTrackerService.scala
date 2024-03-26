@@ -29,7 +29,8 @@ class OnlineTrackerService[F[_]: Sync](repo: OnlineTrackerRepoAlg[F], tibiaDataC
       latestSaveTime <- repo.getLatestSaveTime(worldId)
 
       _ <-
-        if !latestSaveTime.contains(tdTime) then updateOnlineList(worldId, worldResponse, tdTime)
+        if latestSaveTime.isEmpty || latestSaveTime.exists(_.isBefore(tdTime)) then
+          updateOnlineList(worldId, worldResponse, tdTime)
         else Logger[F].info("Not proceeding, received cached response from TibiaData")
 
       _ <- Logger[F].info("--- end ---")
