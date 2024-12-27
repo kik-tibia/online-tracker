@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters.*
 class FindAltsCommand(service: AltFinderService[IO]) extends Command {
 
   override val command: SlashCommandData = Commands.slash("alts", "A list of possible alts for a list of characters")
-    .addOptions(
+    .setGuildOnly(true).addOptions(
       List(
         new OptionData(OptionType.STRING, "characters", "A list of characters to check, comma separated.", true, false),
         new OptionData(
