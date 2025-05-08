@@ -1,5 +1,6 @@
 package com.kiktibia.onlinetracker.altfinder.repo
 
+import cats.syntax.all.*
 import cats.Monad
 import cats.effect.kernel.Concurrent
 import com.kiktibia.onlinetracker.altfinder.repo.Model.*
@@ -9,8 +10,9 @@ import skunk.codec.all.{int8, timestamptz, varchar}
 import skunk.implicits.{sql, toIdOps}
 
 import java.time.OffsetDateTime
+import cats.effect.kernel.Async
 
-class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[F])
+class AltFinderSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[F])
     extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
 
   override def getOnlineTimes(
@@ -109,7 +111,7 @@ class AltFinderSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[
         SELECT name FROM character
         WHERE id = $int8
       """.query(varchar)
-    session.unique(q, characterId)
+    Async[F].blocking(session.unique(q, characterId)).flatten
   }
 
   override def getCharacterHistories(

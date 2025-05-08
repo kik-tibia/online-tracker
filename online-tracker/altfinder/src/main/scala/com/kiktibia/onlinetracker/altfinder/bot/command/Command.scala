@@ -14,14 +14,14 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import scala.util.Try
 
-trait Command {
+trait Command[F[_]] {
 
   given IORuntime = IORuntime.global
 
   val command: SlashCommandData
   val embedColour = 16763922
 
-  def handleEvent(event: SlashCommandInteractionEvent): MessageEmbed
+  def handleEvent(event: SlashCommandInteractionEvent): F[MessageEmbed]
 
   def optionMappingToSSDateTime(option: OptionMapping): Either[String, OffsetDateTime] = {
     val dateString = option.getAsString()

@@ -1,6 +1,6 @@
 package com.kiktibia.onlinetracker.altfinder.service
 
-import cats.effect.Sync
+import cats.effect.Async
 import cats.implicits.*
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.kiktibia.onlinetracker.altfinder.LoginPlotter
@@ -18,6 +18,7 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import cats.effect.kernel.Async
 
 object AltFinderService {
   case class CharacterLoginHistory(characterId: Long, segments: List[OnlineSegment])
@@ -43,7 +44,7 @@ object AltFinderService {
 
 }
 
-class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: BazaarScraper[F]) {
+class AltFinderService[F[_]: Async](repo: AltFinderRepoAlg[F], bazaarScraper: BazaarScraper[F]) {
 
   given Logger[F] = Slf4jLogger.getLogger[F]
 
@@ -100,7 +101,7 @@ class AltFinderService[F[_]: Sync](repo: AltFinderRepoAlg[F], bazaarScraper: Baz
       mainSegments <- repo.getOnlineTimes(characterNames, from, to)
       toCheckSegments <- repo.getOnlineTimes(toCheck, from, to)
       _ <- Logger[F].info(s"${toCheckSegments.length} rows to analyse from ${mainSegments.length} segments")
-      adj = getAdjacencies(mainSegments, toCheckSegments, includeClashes = true, distance = 0)
+      adj <- Async[F].blocking(getAdjacencies(mainSegments, toCheckSegments, includeClashes = true, distance = 0))
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
       _ <- results.map(i => Logger[F].info(i.toString)).sequence
