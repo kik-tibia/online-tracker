@@ -1,17 +1,21 @@
 package com.kiktibia.onlinetracker.tracker.repo
 
 import cats.Monad
+import cats.effect.kernel.Async
 import cats.effect.kernel.Concurrent
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.common.repo.SkunkExtensions
 import com.kiktibia.onlinetracker.tracker.repo.Model.*
 import skunk.*
-import skunk.codec.all.{int8, timestamptz, varchar}
-import skunk.implicits.{sql, toIdOps}
+import skunk.codec.all.int8
+import skunk.codec.all.timestamptz
+import skunk.codec.all.varchar
+import skunk.implicits.sql
+import skunk.implicits.toIdOps
 
 import java.time.OffsetDateTime
 
-class OnlineTrackerSkunkRepo[F[_]: Monad](val session: Session[F])(using Concurrent[F])
+class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[F])
     extends OnlineTrackerRepoAlg[F] with OnlineTrackerCodecs with SkunkExtensions[F] {
 
   override def getWorld(name: String): F[WorldRow] = {

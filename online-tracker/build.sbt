@@ -1,4 +1,4 @@
-ThisBuild / version := "1.8.0"
+ThisBuild / version := "1.8.1"
 ThisBuild / scalaVersion := "3.3.5"
 
 lazy val root = (project in file(".")).aggregate(tracker, altfinder)
@@ -33,7 +33,7 @@ lazy val skunkVersion = "1.0.0-M1"
 lazy val commonsTextVersion = "1.9"
 lazy val javaSizeofVersion = "0.0.5"
 lazy val xchartVersion = "3.8.0"
-lazy val jdaVersion = "5.0.0-beta.13"
+lazy val jdaVersion = "5.5.1"
 lazy val jsoupVersion = "1.16.2"
 
 lazy val commonDependencies = Seq(
