@@ -1,4 +1,4 @@
-ThisBuild / version := "1.8.2"
+ThisBuild / version := "1.9.0"
 ThisBuild / scalaVersion := "3.3.5"
 
 lazy val root = (project in file(".")).aggregate(tracker, altfinder)

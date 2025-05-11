@@ -21,7 +21,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 object AltFinderService {
-  case class CharacterLoginHistory(characterId: Long, segments: List[OnlineSegment])
+  case class CharacterLoginHistory(characterId: Long, segments: Array[OnlineSegment])
 
   case class CharacterAdjacencies(
       characterId: Long,
@@ -114,20 +114,22 @@ class AltFinderService[F[_]: Async](repo: AltFinderRepoAlg[F], bazaarScraper: Ba
       includeClashes: Boolean,
       distance: Int
   ): List[CharacterAdjacencies] = {
-    val characterHistories = others.groupBy(_.characterId).toList.map(i => CharacterLoginHistory(i._1, i._2))
+    val characterHistories = others.groupBy(_.characterId).toList
+      .map(i => CharacterLoginHistory(i._1, i._2.toArray.sortBy(_.start)))
+    val mhArray = mainHistory.toArray.sortBy(_.start)
 
     characterHistories.flatMap { h =>
       val clashes =
-        if (includeClashes) { countClashes(mainHistory, h.segments) }
+        if (includeClashes) { countClashes(mhArray, h.segments) }
         else {
-          val clashes = hasClashes(mainHistory, h.segments)
+          val clashes = hasClashes(mhArray, h.segments)
           if (clashes) -1 else 0
         }
       if clashes == 0 || includeClashes then
         Some(CharacterAdjacencies(
           h.characterId,
           None,
-          countAdjacencies(mainHistory, h.segments, distance),
+          countAdjacencies(mhArray, h.segments, distance),
           clashes,
           h.segments.length
         ))
@@ -135,22 +137,43 @@ class AltFinderService[F[_]: Async](repo: AltFinderRepoAlg[F], bazaarScraper: Ba
     }.sortBy(-_.adjacencies)
   }
 
-  private def hasClashes(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Boolean = {
-    // Set to 1 for for an acceptable overlap of 1 minute
-    // e.g. if you x-log then switch account, both chars could be online at the same time for 1 minute
-    val overlap = 0
-    mainHistory.exists { m => other.exists { o => o.start < m.end - overlap && m.start < o.end - overlap } }
+  def hasClashes(mainHistory: Array[OnlineSegment], other: Array[OnlineSegment]): Boolean = {
+    // Using two sliding pointers to check more efficiently
+    var i = 0
+    var j = 0
+    while (i < mainHistory.length && j < other.length) {
+      val mi = mainHistory(i)
+      val oj = other(j)
+
+      if (oj.start < mi.end && mi.start < oj.end) return true
+
+      // Increment the earliest pointer, keeping them kind of in sync
+      if (mi.end < oj.end) i += 1 else j += 1
+    }
+
+    false
   }
 
-  private def countClashes(mainHistory: List[OnlineSegment], other: List[OnlineSegment]): Int = {
-    // Set to 1 for for an acceptable overlap of 1 minute
-    // e.g. if you x-log then switch account, both chars could be online at the same time for 1 minute
-    val overlap = 0
-    mainHistory.count { m => other.exists { o => o.start < m.end - overlap && m.start < o.end - overlap } }
+  def countClashes(mainHistory: Array[OnlineSegment], other: Array[OnlineSegment]): Int = {
+    // Similar to hasClashes (sliding pointers)
+    var i = 0
+    var j = 0
+    var count = 0
+    while (i < mainHistory.length && j < other.length) {
+      val mi = mainHistory(i)
+      val oj = other(j)
+
+      if (oj.start < mi.end && mi.start < oj.end) count += 1
+
+      if (mi.end < oj.end) i += 1 else j += 1
+    }
+
+    count
   }
 
   // Distance is the acceptable distance between logouts and logins.
-  private def countAdjacencies(mainHistory: List[OnlineSegment], other: List[OnlineSegment], distance: Int): Int = {
+  // No point optimising this one until the database query is optimised (it takes like 50x longer than this method)
+  private def countAdjacencies(mainHistory: Array[OnlineSegment], other: Array[OnlineSegment], distance: Int): Int = {
     mainHistory.count { m =>
       other.exists { o =>
         val diff = o.start - m.end
