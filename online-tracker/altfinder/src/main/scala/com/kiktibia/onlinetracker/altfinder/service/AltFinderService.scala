@@ -101,7 +101,7 @@ class AltFinderService[F[_]: Async](repo: AltFinderRepoAlg[F], bazaarScraper: Ba
       mainSegments <- repo.getOnlineTimes(characterNames, from, to)
       toCheckSegments <- repo.getOnlineTimes(toCheck, from, to)
       _ <- Logger[F].info(s"${toCheckSegments.length} rows to analyse from ${mainSegments.length} segments")
-      adj <- Async[F].blocking(getAdjacencies(mainSegments, toCheckSegments, includeClashes = true, distance = 0))
+      adj = getAdjacencies(mainSegments, toCheckSegments, includeClashes = true, distance = 0)
       results <- adj.map(a => repo.getCharacterName(a.characterId).map { i => a.copy(characterName = Some(i)) })
         .sequence
       _ <- results.map(i => Logger[F].info(i.toString)).sequence

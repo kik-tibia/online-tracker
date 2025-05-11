@@ -13,6 +13,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import skunk.Session
 
 import scala.concurrent.duration.*
+import cats.effect.std.Dispatcher
 
 object Main extends IOApp {
 
@@ -22,26 +23,25 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     AppConfig.config.load[IO].flatMap { cfg =>
       val dbCfg = cfg.database
-      val session: Resource[IO, Session[IO]] = Session.single(
+      val dbSessionResource: Resource[IO, Session[IO]] = Session.single(
         host = dbCfg.host,
         port = dbCfg.port,
         user = dbCfg.user,
         database = dbCfg.database,
         password = dbCfg.password.some
       )
+      val tibiaDataClientResource = TibiaDataHttp4sClient.clientResource
 
-      session.use { s =>
-        val repo = new OnlineTrackerSkunkRepo(s)
-        TibiaDataHttp4sClient.clientResource.use { client =>
-          val tibiaDataClient = new TibiaDataHttp4sClient(client)
-          val service = new OnlineTrackerService(repo, tibiaDataClient)
+      (dbSessionResource, tibiaDataClientResource).tupled.use { case (dbSession, tibiaDataClientSession) =>
+        val repo = new OnlineTrackerSkunkRepo(dbSession)
+        val tibiaDataClient = new TibiaDataHttp4sClient(tibiaDataClientSession)
+        val service = new OnlineTrackerService(repo, tibiaDataClient)
 
-          Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
-            service.updateDataForWorld("Nefera").handleErrorWith { e =>
-              Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")
-            }
-          }.compile.drain.map(_ => ExitCode.Success)
-        }
+        Stream.fixedRateStartImmediately[IO](15.seconds).evalTap { _ =>
+          service.updateDataForWorld("Nefera").handleErrorWith { e =>
+            Logger[IO].warn(e)(s"Recovering from error in stream:${System.lineSeparator}")
+          }
+        }.compile.drain.as(ExitCode.Success)
       }
     }
   }

@@ -14,11 +14,12 @@ import skunk.implicits.sql
 import skunk.implicits.toIdOps
 
 import java.time.OffsetDateTime
+import cats.effect.IO
 
-class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[F])
-    extends OnlineTrackerRepoAlg[F] with OnlineTrackerCodecs with SkunkExtensions[F] {
+class OnlineTrackerSkunkRepo(val session: Session[IO])
+    extends OnlineTrackerRepoAlg[IO] with OnlineTrackerCodecs with SkunkExtensions {
 
-  override def getWorld(name: String): F[WorldRow] = {
+  override def getWorld(name: String): IO[WorldRow] = {
     val q: Query[String, WorldRow] = sql"""
         SELECT id, name
         FROM world
@@ -27,7 +28,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.unique(q, name)
   }
 
-  override def getLatestSaveTime(worldId: Long): F[Option[OffsetDateTime]] = {
+  override def getLatestSaveTime(worldId: Long): IO[Option[OffsetDateTime]] = {
     val q: Query[Long, Option[OffsetDateTime]] = sql"""
         SELECT MAX(time)
         FROM world_save_time
@@ -36,7 +37,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.unique(q, worldId)
   }
 
-  def getAllOnline(worldId: Long): F[List[OnlineNameTime]] = {
+  def getAllOnline(worldId: Long): IO[List[OnlineNameTime]] = {
     val q: Query[Long, OnlineNameTime] = sql"""
         SELECT character.name, currently_online.login_time
         FROM currently_online
@@ -46,7 +47,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     prepareToList(q, worldId)
   }
 
-  override def getMaxSequenceId(worldId: Long): F[Option[Long]] = {
+  override def getMaxSequenceId(worldId: Long): IO[Option[Long]] = {
     val q: Query[Long, Option[Long]] = sql"""
         SELECT MAX(sequence_id)
         FROM world_save_time
@@ -55,7 +56,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.unique(q, worldId)
   }
 
-  override def insertWorldSaveTime(w: WorldSaveTimeRow): F[Long] = {
+  override def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long] = {
     val q: Query[WorldSaveTimeRow, Long] = sql"""
         INSERT INTO world_save_time(world_id, sequence_id, time)
         VALUES $worldSaveTimeEncoder
@@ -64,7 +65,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.unique(q, w)
   }
 
-  override def insertCharacterNameHistory(characterNameHistory: CharacterNameHistoryRow): F[Unit] = {
+  override def insertCharacterNameHistory(characterNameHistory: CharacterNameHistoryRow): IO[Unit] = {
     val c: Command[CharacterNameHistoryRow] = sql"""
         INSERT INTO character_name_history(character_id, name, from_date, until_date)
         VALUES $characterNameHistoryEncoder
@@ -72,7 +73,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.prepare(c).flatMap(_.execute(characterNameHistory)).void
   }
 
-  override def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): F[Unit] = {
+  override def updateCharacterName(id: Long, newName: String, time: OffsetDateTime): IO[Unit] = {
     val c: Command[(String, OffsetDateTime, Long)] = sql"""
         UPDATE character SET
           name = $varchar,
@@ -82,7 +83,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.prepare(c).flatMap(_.execute((newName, time, id))).void
   }
 
-  override def insertCharacter(character: CharacterRow): F[Unit] = {
+  override def insertCharacter(character: CharacterRow): IO[Unit] = {
     val c: Command[CharacterRow] = sql"""
         INSERT INTO character(name, created, current_name_since)
         VALUES $characterEncoder
@@ -91,7 +92,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.prepare(c).flatMap(_.execute(character)).void
   }
 
-  override def getCharacter(name: String): F[Option[CharacterRow]] = {
+  override def getCharacter(name: String): IO[Option[CharacterRow]] = {
     val q: Query[String, CharacterRow] = sql"""
         SELECT id, name, created, current_name_since FROM character
         WHERE name = $varchar
@@ -99,7 +100,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.option(q, name)
   }
 
-  override def insertOnline(online: OnlineNameTime, worldId: Long): F[Unit] = {
+  override def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit] = {
     val c: Command[(String, Long, Long)] = sql"""
         INSERT INTO currently_online(character_id, world_id, login_time)
         VALUES (
@@ -110,7 +111,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.prepare(c).flatMap(_.execute((online.name, worldId, online.loginTime))).void
   }
 
-  override def deleteOnline(name: String, worldId: Long): F[Unit] = {
+  override def deleteOnline(name: String, worldId: Long): IO[Unit] = {
     val c: Command[String ~ Long] = sql"""
         DELETE FROM currently_online O
         USING character C
@@ -121,7 +122,7 @@ class OnlineTrackerSkunkRepo[F[_]: Async](val session: Session[F])(using Concurr
     session.prepare(c).flatMap(_.execute(name ~ worldId)).void
   }
 
-  override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): F[Unit] = {
+  override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit] = {
     val c: Command[(String, Long, Long)] = sql"""
         INSERT INTO online_history(character_id, login_time, logout_time)
         VALUES (

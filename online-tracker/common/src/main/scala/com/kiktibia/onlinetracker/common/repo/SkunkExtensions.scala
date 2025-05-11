@@ -4,10 +4,13 @@ import cats.Monad
 import cats.effect.kernel.*
 import cats.syntax.all.*
 import skunk.{Query, Session}
+import cats.effect.unsafe.IORuntime
+import cats.effect.IO
 
-trait SkunkExtensions[F[_]] {
-  val session: Session[F]
+trait SkunkExtensions {
+  val session: Session[IO]
 
-  def prepareToList[A, B](q: Query[A, B], args: A)(using Async[F]): F[List[B]] = Async[F]
-    .blocking { session.prepare(q).flatMap(_.stream(args, 1048576).compile.toList) }.flatten
+  def prepareToList[A, B](q: Query[A, B], args: A): IO[List[B]] = session.prepare(q)
+    .flatMap(_.stream(args, 65536).compile.toList)
+
 }

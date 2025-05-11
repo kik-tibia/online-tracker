@@ -43,7 +43,6 @@ object BotApp extends IOApp {
           val bazaarScraper = new BazaarScraper(bazaarScraperClient)
           val repo = new AltFinderSkunkRepo(dbSession)
           val service = new AltFinderService(repo, bazaarScraper)
-
           val findAltsCommand = new FindAltsCommand[IO](service)
           val commands = List(findAltsCommand)
           val botListener = new BotListener[IO](commands, dispatcher)
@@ -53,7 +52,7 @@ object BotApp extends IOApp {
           IO.never
         }
       }
-    }.as(ExitCode.Success)
+    }
   }
 
 }

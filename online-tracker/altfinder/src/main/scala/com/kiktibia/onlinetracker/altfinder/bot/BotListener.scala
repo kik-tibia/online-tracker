@@ -10,7 +10,6 @@ import cats.syntax.all.*
 class BotListener[F[_]: Async](commands: List[Command[F]], dispatcher: Dispatcher[F]) extends ListenerAdapter {
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit = {
-    println("aaa")
     event.deferReply().queue()
     commands.find(_.command.getName == event.getName) match {
       case Some(command) => dispatcher.unsafeRunAndForget {

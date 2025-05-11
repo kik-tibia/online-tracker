@@ -11,15 +11,16 @@ import skunk.implicits.{sql, toIdOps}
 
 import java.time.OffsetDateTime
 import cats.effect.kernel.Async
+import cats.effect.IO
 
-class AltFinderSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[F])
-    extends AltFinderRepoAlg[F] with AltFinderCodecs with SkunkExtensions[F] {
+class AltFinderSkunkRepo(val session: Session[IO])
+    extends AltFinderRepoAlg[IO] with AltFinderCodecs with SkunkExtensions {
 
   override def getOnlineTimes(
       characterNames: List[String],
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime]
-  ): F[List[OnlineSegment]] = {
+  ): IO[List[OnlineSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
     val baseFragment = sql"""
@@ -54,7 +55,7 @@ class AltFinderSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime],
       distance: Option[Int]
-  ): F[List[OnlineSegment]] = {
+  ): IO[List[OnlineSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
     val baseFragment = sql"""
@@ -106,19 +107,19 @@ class AltFinderSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[
     }
   }
 
-  override def getCharacterName(characterId: Long): F[String] = {
+  override def getCharacterName(characterId: Long): IO[String] = {
     val q: Query[Long, String] = sql"""
         SELECT name FROM character
         WHERE id = $int8
       """.query(varchar)
-    Async[F].blocking(session.unique(q, characterId)).flatten
+    session.unique(q, characterId)
   }
 
   override def getCharacterHistories(
       characterNames: List[String],
       from: Option[OffsetDateTime],
       to: Option[OffsetDateTime]
-  ): F[List[OnlineDateSegment]] = {
+  ): IO[List[OnlineDateSegment]] = {
     val cl = characterNames.map(_.toLowerCase)
 
     val baseFragment = sql"""
@@ -150,7 +151,7 @@ class AltFinderSkunkRepo[F[_]: Async](val session: Session[F])(using Concurrent[
     }
   }
 
-  override def getPastCharacterNames(characterName: String): F[List[String]] = {
+  override def getPastCharacterNames(characterName: String): IO[List[String]] = {
     val q = sql"""
       SELECT cnh.name FROM character c JOIN character_name_history cnh ON c.id = cnh.character_id
       WHERE lower(c.name) = $varchar
