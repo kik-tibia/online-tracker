@@ -1,8 +1,9 @@
 package com.kiktibia.onlinetracker.altfinder.bot.command
 
-import cats.syntax.all.*
 import cats.effect.IO
+import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
+import cats.syntax.all.*
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import net.dv8tion.jda.api.EmbedBuilder
@@ -14,6 +15,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.LocalDate
 import java.time.LocalTime
@@ -22,9 +25,10 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters.*
-import cats.effect.kernel.Async
 
 class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command[F] {
+
+  given Logger[F] = Slf4jLogger.getLogger[F]
 
   override val command: SlashCommandData = Commands.slash("alts", "A list of possible alts for a list of characters")
     .setGuildOnly(true).addOptions(
@@ -58,8 +62,6 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
     )
 
   override def handleEvent(event: SlashCommandInteractionEvent): F[MessageEmbed] = {
-    println("in handleEvent")
-
     val options: List[OptionMapping] = event.getInteraction.getOptions.asScala.toList
     val chars = options.find(_.getName == "characters").get.getAsString()
     val charList = chars.split(",").map(_.trim).toList
@@ -70,45 +72,46 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
 
     val embedBuilder = (new EmbedBuilder()).setColor(embedColour).setTitle("Alt finder")
 
-    (parseFrom, parseTo) match {
-      case (Right(from), Right(to)) => service.findAndPrintAlts(charList, from, to, distance, includeClashes)
-          .map { results =>
+    Logger[F].info(event.getUser().getName()) *>
+      ((parseFrom, parseTo) match {
+        case (Right(from), Right(to)) => service.findAndPrintAlts(charList, from, to, distance, includeClashes)
+            .map { results =>
 
-            val dateMessage = (results.searchedFrom, results.searchedTo) match {
-              case (None, None) => "Max range"
-              case (None, Some(t)) => s"Until ${t.toLocalDate()}"
-              case (Some(f), None) => s"From ${f.toLocalDate()}"
-              case (Some(f), Some(t)) => s"From ${f.toLocalDate()} until ${t.toLocalDate()}"
+              val dateMessage = (results.searchedFrom, results.searchedTo) match {
+                case (None, None) => "Max range"
+                case (None, Some(t)) => s"Until ${t.toLocalDate()}"
+                case (Some(f), None) => s"From ${f.toLocalDate()}"
+                case (Some(f), Some(t)) => s"From ${f.toLocalDate()} until ${t.toLocalDate()}"
+              }
+
+              val bazaarScraperError = "Error accessing tibiavip.app"
+              val tradedField = (results.sales.allSales, results.sales.numberOfErrors) match
+                case (Nil, 0) => None
+                case (Nil, _) => Some(new Field("Couldn't check if traded", bazaarScraperError, false))
+                case (sales, _) =>
+                  val salesList = results.sales.characterSales.flatMap { s =>
+                    s.saleDates match
+                      case Right(Nil) => None
+                      case Right(dates) => Some(s"**${s.name}**: ${dates.mkString(", ")}")
+                      case Left(_) => Some(s"**${s.name}**: $bazaarScraperError")
+                  }
+                  val dateMessage = from match
+                    case None => "Setting the `from` date to be the date of the latest sale."
+                    case Some(_) => "Using `from` date provided. Results may be inaccurate."
+                  val message = s"The following characters have been traded:\n${salesList.mkString("\n")}\n$dateMessage"
+                  Some(new Field("Traded character detected", message, false))
+
+              embedBuilder.addField("Searched characters", results.searchedCharacters.mkString(", "), false)
+                .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), true)
+                .addField("Date range", dateMessage, true).addField("\u200b", "\u200b", true)
+                .addField("Adjacency distance", appendMinutes(distance.getOrElse(0)), true)
+                .addField("Include clashes", includeClashes.toString, true).addField("\u200b", "\u200b", true)
+                .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
             }
-
-            val bazaarScraperError = "Error accessing tibiavip.app"
-            val tradedField = (results.sales.allSales, results.sales.numberOfErrors) match
-              case (Nil, 0) => None
-              case (Nil, _) => Some(new Field("Couldn't check if traded", bazaarScraperError, false))
-              case (sales, _) =>
-                val salesList = results.sales.characterSales.flatMap { s =>
-                  s.saleDates match
-                    case Right(Nil) => None
-                    case Right(dates) => Some(s"**${s.name}**: ${dates.mkString(", ")}")
-                    case Left(_) => Some(s"**${s.name}**: $bazaarScraperError")
-                }
-                val dateMessage = from match
-                  case None => "Setting the `from` date to be the date of the latest sale."
-                  case Some(_) => "Using `from` date provided. Results may be inaccurate."
-                val message = s"The following characters have been traded:\n${salesList.mkString("\n")}\n$dateMessage"
-                Some(new Field("Traded character detected", message, false))
-
-            embedBuilder.addField("Searched characters", results.searchedCharacters.mkString(", "), false)
-              .addFieldOption(tradedField).addField("Total logins", results.mainLogins.toString(), true)
-              .addField("Date range", dateMessage, true).addField("\u200b", "\u200b", true)
-              .addField("Adjacency distance", appendMinutes(distance.getOrElse(0)), true)
-              .addField("Include clashes", includeClashes.toString, true).addField("\u200b", "\u200b", true)
-              .addField("Possible matches", results.adjacencies.take(20).mkString("\n"), false).build()
-          }
-      case _ =>
-        val errors = List(parseFrom, parseTo).map(_.left.toOption).flatten.mkString("\n")
-        Async[F].pure(embedBuilder.addField("Failed", errors, false).build())
-    }
+        case _ =>
+          val errors = List(parseFrom, parseTo).map(_.left.toOption).flatten.mkString("\n")
+          Async[F].pure(embedBuilder.addField("Failed", errors, false).build())
+      })
   }
 
   extension (eb: EmbedBuilder)

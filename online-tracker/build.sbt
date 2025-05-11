@@ -1,4 +1,4 @@
-ThisBuild / version := "1.8.1"
+ThisBuild / version := "1.8.2"
 ThisBuild / scalaVersion := "3.3.5"
 
 lazy val root = (project in file(".")).aggregate(tracker, altfinder)
@@ -29,7 +29,7 @@ lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.1"
 lazy val log4catsVersion = "2.6.0"
 lazy val logbackVersion = "1.5.18"
-lazy val skunkVersion = "1.0.0-M1"
+lazy val skunkVersion = "1.0.0-M10"
 lazy val commonsTextVersion = "1.9"
 lazy val javaSizeofVersion = "0.0.5"
 lazy val xchartVersion = "3.8.0"

@@ -1,22 +1,22 @@
 package com.kiktibia.onlinetracker.altfinder
 
 import cats.effect.*
+import cats.effect.std.Dispatcher
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraperHttp4sClient
+import com.kiktibia.onlinetracker.altfinder.bot.BotListener
+import com.kiktibia.onlinetracker.altfinder.bot.command.FindAltsCommand
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.common.config.AppConfig
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.otel4s.trace.Tracer
 import skunk.Session
-import cats.effect.std.Dispatcher
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.JDABuilder
-import org.http4s.client.Client
-import com.kiktibia.onlinetracker.altfinder.bot.BotListener
-import com.kiktibia.onlinetracker.altfinder.bot.command.FindAltsCommand
 
 object BotApp extends IOApp {
 

@@ -1,6 +1,7 @@
 package com.kiktibia.onlinetracker.altfinder.service
 
 import cats.effect.Async
+import cats.effect.kernel.Async
 import cats.implicits.*
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.kiktibia.onlinetracker.altfinder.LoginPlotter
@@ -18,7 +19,6 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import cats.effect.kernel.Async
 
 object AltFinderService {
   case class CharacterLoginHistory(characterId: Long, segments: List[OnlineSegment])

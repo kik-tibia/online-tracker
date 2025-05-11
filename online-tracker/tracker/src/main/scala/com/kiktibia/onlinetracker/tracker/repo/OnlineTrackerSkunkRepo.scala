@@ -1,6 +1,7 @@
 package com.kiktibia.onlinetracker.tracker.repo
 
 import cats.Monad
+import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.kernel.Concurrent
 import cats.syntax.all.*
@@ -14,7 +15,6 @@ import skunk.implicits.sql
 import skunk.implicits.toIdOps
 
 import java.time.OffsetDateTime
-import cats.effect.IO
 
 class OnlineTrackerSkunkRepo(val session: Session[IO])
     extends OnlineTrackerRepoAlg[IO] with OnlineTrackerCodecs with SkunkExtensions {
