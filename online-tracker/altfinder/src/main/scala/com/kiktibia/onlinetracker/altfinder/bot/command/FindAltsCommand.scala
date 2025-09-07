@@ -84,7 +84,7 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
                 case (Some(f), Some(t)) => s"From ${f.toLocalDate()} until ${t.toLocalDate()}"
               }
 
-              val bazaarScraperError = "Error accessing tibiavip.app"
+              val bazaarScraperError = "Error accessing exevopan.com"
               val tradedField = (results.sales.allSales, results.sales.numberOfErrors) match
                 case (Nil, 0) => None
                 case (Nil, _) => Some(new Field("Couldn't check if traded", bazaarScraperError, false))
@@ -92,7 +92,7 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
                   val salesList = results.sales.characterSales.flatMap { s =>
                     s.saleDates match
                       case Right(Nil) => None
-                      case Right(dates) => Some(s"**${s.name}**: ${dates.mkString(", ")}")
+                      case Right(dates) => Some(s"**${s.name}**: ${dates.map(_.toLocalDate).mkString(", ")}")
                       case Left(_) => Some(s"**${s.name}**: $bazaarScraperError")
                   }
                   val dateMessage = from match

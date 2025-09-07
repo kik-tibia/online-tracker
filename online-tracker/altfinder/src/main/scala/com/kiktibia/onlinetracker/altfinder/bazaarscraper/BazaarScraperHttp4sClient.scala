@@ -28,10 +28,18 @@ object BazaarScraperHttp4sClient {
 }
 
 class BazaarScraperHttp4sClient[F[_]: Sync](client: Client[F])(using Concurrent[F]) extends BazaarScraperClientAlg[F] {
-  private val apiRoot = uri"https://tibiavip.app"
+  private val apiRoot = uri"https://www.exevopan.com"
 
   def searchCharacter(name: String): F[String] = {
-    val target = (apiRoot / "auctions").withQueryParams(Map(("status", "3"), ("name", name)))
+    // nicknameFilter for exevopan is a "contains" rather than exact match, so here we grab a lot of results to be safe
+    // and handling pagination is too much effort
+    val target = (apiRoot / "api/auctions").withQueryParams(Map(
+      ("nicknameFilter", name),
+      ("serverSet", "Nefera"),
+      ("descending", "true"),
+      ("history", "true"),
+      ("pageSize", "100")
+    ))
     client.expect(target)
   }
 

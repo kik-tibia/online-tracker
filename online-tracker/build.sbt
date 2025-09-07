@@ -1,4 +1,4 @@
-ThisBuild / version := "1.9.1"
+ThisBuild / version := "1.10.0"
 ThisBuild / scalaVersion := "3.3.5"
 
 ThisBuild / dockerBaseImage := "eclipse-temurin:17-jre"
@@ -25,7 +25,7 @@ lazy val altfinder = project.in(file("altfinder")).enablePlugins(JavaAppPackagin
 ).dependsOn(common)
 
 lazy val http4sVersion = "1.0.0-M38"
-lazy val circeVersion = "0.14.3"
+lazy val circeVersion = "0.14.14"
 lazy val cirisVersion = "3.2.0"
 lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.1"
@@ -43,6 +43,7 @@ lazy val commonDependencies = Seq(
   "org.typelevel" %% "cats-effect" % catsEffectVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-literal" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
   "is.cir" %% "ciris" % cirisVersion,
   "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
   "ch.qos.logback" % "logback-classic" % logbackVersion,
