@@ -71,7 +71,7 @@ class BazaarScraper[F[_]: Sync](client: BazaarScraperClientAlg[F]) {
               val endOpt = c.get[Long]("auctionEnd").toOption
               val biddedOpt = c.get[Boolean]("hasBeenBidded").toOption
               (nickOpt, endOpt, biddedOpt) match
-                case (Some(nick), Some(epoch), Some(bidded)) if nick == name && bidded =>
+                case (Some(nick), Some(epoch), Some(bidded)) if nick.equalsIgnoreCase(name) && bidded =>
                   Some(Instant.ofEpochSecond(epoch))
                 case _ => None
             }

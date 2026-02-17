@@ -1,4 +1,4 @@
-ThisBuild / version := "1.10.0"
+ThisBuild / version := "1.10.2"
 ThisBuild / scalaVersion := "3.3.5"
 
 ThisBuild / dockerBaseImage := "eclipse-temurin:17-jre"
