@@ -38,7 +38,7 @@ class BazaarScraperHttp4sClient[F[_]: Sync](client: Client[F])(using Concurrent[
       ("serverSet", "Nefera"),
       ("descending", "true"),
       ("history", "true"),
-      ("pageSize", "100")
+      ("pageSize", "10")
     ))
     client.expect(target)
   }
