@@ -1,7 +1,8 @@
 package com.kiktibia.onlinetracker.altfinder.repo
 
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime, ZoneId}
 
 object Model {
   case class OnlineSegment(characterId: Long, start: Long, end: Long)

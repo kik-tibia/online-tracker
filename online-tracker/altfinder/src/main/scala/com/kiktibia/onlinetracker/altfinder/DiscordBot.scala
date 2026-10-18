@@ -1,21 +1,17 @@
 package com.kiktibia.onlinetracker.altfinder
 
-import cats.implicits.*
+import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
+import cats.effect.std.Dispatcher
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.altfinder.bot.BotListener
-import com.kiktibia.onlinetracker.altfinder.bot.command.FindAltsCommand
 import com.kiktibia.onlinetracker.altfinder.bot.command.Command
-import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.common.config.BotConfig
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 
 import scala.jdk.CollectionConverters.*
-import cats.effect.IO
-import cats.effect.kernel.Resource
-import cats.effect.kernel.Async
-import cats.effect.std.Dispatcher
-import net.dv8tion.jda.api.JDA
 
 class DiscordBot[F[_]: Async](
     jda: JDA,

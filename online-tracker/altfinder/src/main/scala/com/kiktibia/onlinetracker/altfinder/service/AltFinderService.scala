@@ -4,10 +4,8 @@ import cats.effect.Async
 import cats.effect.kernel.Async
 import cats.implicits.*
 import com.carrotsearch.sizeof.RamUsageEstimator
-import com.kiktibia.onlinetracker.altfinder.LoginPlotter
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper.*
-import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraperClientAlg
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderRepoAlg
 import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
 import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineSegment
@@ -15,10 +13,7 @@ import com.kiktibia.onlinetracker.altfinder.service.AltFinderService.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-import java.time.LocalTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 object AltFinderService {
   case class CharacterLoginHistory(characterId: Long, segments: Array[OnlineSegment])

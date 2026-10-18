@@ -1,9 +1,6 @@
 package com.kiktibia.onlinetracker.altfinder.repo
 
-import cats.Monad
 import cats.effect.IO
-import cats.effect.kernel.Async
-import cats.effect.kernel.Concurrent
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.altfinder.repo.Model.*
 import com.kiktibia.onlinetracker.common.repo.SkunkExtensions
@@ -12,7 +9,6 @@ import skunk.codec.all.int8
 import skunk.codec.all.timestamptz
 import skunk.codec.all.varchar
 import skunk.implicits.sql
-import skunk.implicits.toIdOps
 
 import java.time.OffsetDateTime
 
@@ -43,10 +39,10 @@ class AltFinderSkunkRepo(val session: Session[IO])
         prepareToList(q, (cl, (f, t)))
       case (Some(f), None) =>
         val q = sql"$baseFragment $joinFragment $charFragment $fromFragment".query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ f)
+        prepareToList(q, (cl, f))
       case (None, Some(t)) =>
         val q = sql"$baseFragment $joinFragment $charFragment $toFragment".query(onlineSegmentDecoder)
-        prepareToList(q, cl ~ t)
+        prepareToList(q, (cl, t))
       case (None, None) =>
         val q = sql"$baseFragment $charFragment".query(onlineSegmentDecoder)
         prepareToList(q, cl)
@@ -115,7 +111,7 @@ class AltFinderSkunkRepo(val session: Session[IO])
         SELECT name FROM character
         WHERE id = $int8
       """.query(varchar)
-    session.unique(q, characterId)
+    session.unique(q)(characterId)
   }
 
   override def getCharacterHistories(
@@ -144,10 +140,10 @@ class AltFinderSkunkRepo(val session: Session[IO])
         prepareToList(q, (cl, (f, t)))
       case (Some(f), None) =>
         val q = sql"$baseFragment $fromFragment $orderFragment".query(onlineDateSegmentDecoder)
-        prepareToList(q, cl ~ f)
+        prepareToList(q, (cl, f))
       case (None, Some(t)) =>
         val q = sql"$baseFragment $toFragment $orderFragment".query(onlineDateSegmentDecoder)
-        prepareToList(q, cl ~ t)
+        prepareToList(q, (cl, t))
       case (None, None) =>
         val q = sql"$baseFragment $orderFragment".query(onlineDateSegmentDecoder)
         prepareToList(q, cl)

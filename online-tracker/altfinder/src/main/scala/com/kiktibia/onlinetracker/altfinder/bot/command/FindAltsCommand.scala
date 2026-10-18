@@ -1,15 +1,13 @@
 package com.kiktibia.onlinetracker.altfinder.bot.command
 
-import cats.effect.IO
 import cats.effect.kernel.Async
-import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
-import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.MessageEmbed.Field
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.interactions.InteractionContextType
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -18,12 +16,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import scala.jdk.CollectionConverters.*
 
 class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command[F] {
@@ -31,7 +24,7 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
   given Logger[F] = Slf4jLogger.getLogger[F]
 
   override val command: SlashCommandData = Commands.slash("alts", "A list of possible alts for a list of characters")
-    .setGuildOnly(true).addOptions(
+    .setContexts(InteractionContextType.GUILD).addOptions(
       List(
         new OptionData(OptionType.STRING, "characters", "A list of characters to check, comma separated.", true, false),
         new OptionData(
@@ -124,7 +117,7 @@ class FindAltsCommand[F[_]: Async](service: AltFinderService[F]) extends Command
       name: String
   ): Either[String, Option[OffsetDateTime]] = {
     val option: Option[Either[String, OffsetDateTime]] = options.find(_.getName == name).map(optionMappingToSSDateTime)
-    option.map(_.right.map(Some(_))).getOrElse(Right(None))
+    option.map(_.map(Some(_))).getOrElse(Right(None))
   }
 
   private def appendMinutes(i: Int) = if (i == 1) s"$i minute" else s"$i minutes"

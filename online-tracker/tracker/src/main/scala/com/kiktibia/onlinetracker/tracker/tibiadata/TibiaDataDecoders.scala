@@ -1,8 +1,10 @@
 package com.kiktibia.onlinetracker.tracker.tibiadata
 
-import com.kiktibia.onlinetracker.tracker.tibiadata.response.{AccountInformation, Guild}
+import com.kiktibia.onlinetracker.tracker.tibiadata.response.AccountInformation
+import com.kiktibia.onlinetracker.tracker.tibiadata.response.Guild
+import io.circe.Decoder
+import io.circe.HCursor
 import io.circe.generic.auto.*
-import io.circe.{Decoder, HCursor}
 
 trait TibiaDataDecoders {
   given decodeAccountInformation: Decoder[Option[AccountInformation]] = decodeEmptyObjToOption[AccountInformation]

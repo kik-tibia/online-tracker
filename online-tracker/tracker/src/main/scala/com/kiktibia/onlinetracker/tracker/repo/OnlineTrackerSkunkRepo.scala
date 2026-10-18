@@ -1,9 +1,6 @@
 package com.kiktibia.onlinetracker.tracker.repo
 
-import cats.Monad
 import cats.effect.IO
-import cats.effect.kernel.Async
-import cats.effect.kernel.Concurrent
 import cats.syntax.all.*
 import com.kiktibia.onlinetracker.common.repo.SkunkExtensions
 import com.kiktibia.onlinetracker.tracker.repo.Model.*
@@ -12,7 +9,6 @@ import skunk.codec.all.int8
 import skunk.codec.all.timestamptz
 import skunk.codec.all.varchar
 import skunk.implicits.sql
-import skunk.implicits.toIdOps
 
 import java.time.OffsetDateTime
 
@@ -25,7 +21,7 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
         FROM world
         WHERE name = $varchar
       """.query(worldDecoder)
-    session.unique(q, name)
+    session.unique(q)(name)
   }
 
   override def getLatestSaveTime(worldId: Long): IO[Option[OffsetDateTime]] = {
@@ -34,7 +30,7 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
         FROM world_save_time
         WHERE world_id = $int8
       """.query(timestamptz.opt)
-    session.unique(q, worldId)
+    session.unique(q)(worldId)
   }
 
   def getAllOnline(worldId: Long): IO[List[OnlineNameTime]] = {
@@ -53,7 +49,7 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
         FROM world_save_time
         WHERE world_id = $int8
       """.query(int8.opt)
-    session.unique(q, worldId)
+    session.unique(q)(worldId)
   }
 
   override def insertWorldSaveTime(w: WorldSaveTimeRow): IO[Long] = {
@@ -62,7 +58,7 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
         VALUES $worldSaveTimeEncoder
         RETURNING id
       """.query(int8)
-    session.unique(q, w)
+    session.unique(q)(w)
   }
 
   override def insertCharacterNameHistory(characterNameHistory: CharacterNameHistoryRow): IO[Unit] = {
@@ -97,7 +93,7 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
         SELECT id, name, created, current_name_since FROM character
         WHERE name = $varchar
       """.query(characterDecoder)
-    session.option(q, name)
+    session.option(q)(name)
   }
 
   override def insertOnline(online: OnlineNameTime, worldId: Long): IO[Unit] = {
@@ -112,14 +108,14 @@ class OnlineTrackerSkunkRepo(val session: Session[IO])
   }
 
   override def deleteOnline(name: String, worldId: Long): IO[Unit] = {
-    val c: Command[String ~ Long] = sql"""
+    val c: Command[(String, Long)] = sql"""
         DELETE FROM currently_online O
         USING character C
         WHERE O.character_id = C.id
         AND C.name = $varchar
         AND O.world_id = $int8
       """.command
-    session.prepare(c).flatMap(_.execute(name ~ worldId)).void
+    session.prepare(c).flatMap(_.execute((name, worldId))).void
   }
 
   override def insertOnlineHistory(name: String, loginTime: Long, logoutTime: Long): IO[Unit] = {

@@ -10,32 +10,22 @@ import com.kiktibia.onlinetracker.altfinder.bot.command.FindAltsCommand
 import com.kiktibia.onlinetracker.altfinder.repo.AltFinderSkunkRepo
 import com.kiktibia.onlinetracker.altfinder.service.AltFinderService
 import com.kiktibia.onlinetracker.common.config.AppConfig
+import com.kiktibia.onlinetracker.common.repo.SessionResource
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.otel4s.trace.Tracer
-import skunk.Session
 
 object BotApp extends IOApp {
 
   given Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Tracer[IO] = Tracer.noop
 
   override def run(args: List[String]): IO[ExitCode] = {
-    Dispatcher[IO].use { dispatcher =>
+    Dispatcher.parallel[IO].use { dispatcher =>
       AppConfig.config.load[IO].flatMap { cfg =>
-        val dbCfg = cfg.database
-        val dbSessionResource: Resource[IO, Session[IO]] = Session.single(
-          host = dbCfg.host,
-          port = dbCfg.port,
-          user = dbCfg.user,
-          database = dbCfg.database,
-          password = dbCfg.password.some
-        )
+        val dbSessionResource = SessionResource.single(cfg.database)
         val httpClientResource: Resource[IO, Client[IO]] = BazaarScraperHttp4sClient.clientResource
-
         val jdaResource: Resource[IO, JDA] = Resource.eval(IO.delay(JDABuilder.createDefault(cfg.bot.token).build()))
 
         (dbSessionResource, httpClientResource, jdaResource).tupled.use { case (dbSession, httpClient, jda) =>

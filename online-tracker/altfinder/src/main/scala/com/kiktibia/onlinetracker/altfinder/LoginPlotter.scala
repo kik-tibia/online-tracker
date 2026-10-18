@@ -1,15 +1,16 @@
 package com.kiktibia.onlinetracker.altfinder
 
 import com.kiktibia.onlinetracker.altfinder.repo.Model.OnlineDateSegment
-import org.knowm.xchart.HeatMapChartBuilder
-import scala.jdk.CollectionConverters.*
 import org.knowm.xchart.HeatMapChart
+import org.knowm.xchart.HeatMapChartBuilder
 import org.knowm.xchart.SwingWrapper
 import org.knowm.xchart.style.Styler.ChartTheme
+
 import java.awt.Color
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import scala.jdk.CollectionConverters.*
 
 object LoginPlotter {
 

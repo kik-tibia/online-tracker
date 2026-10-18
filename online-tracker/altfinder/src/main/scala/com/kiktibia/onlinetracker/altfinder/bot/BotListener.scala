@@ -1,11 +1,11 @@
 package com.kiktibia.onlinetracker.altfinder.bot
 
-import com.kiktibia.onlinetracker.altfinder.bot.command.Command
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
 import cats.effect.kernel.Async
 import cats.effect.std.Dispatcher
 import cats.syntax.all.*
+import com.kiktibia.onlinetracker.altfinder.bot.command.Command
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 
 class BotListener[F[_]: Async](commands: List[Command[F]], dispatcher: Dispatcher[F]) extends ListenerAdapter {
 

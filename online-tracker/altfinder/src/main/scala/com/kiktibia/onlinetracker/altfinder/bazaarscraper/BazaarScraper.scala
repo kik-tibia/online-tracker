@@ -5,16 +5,11 @@ import cats.implicits.*
 import com.kiktibia.onlinetracker.altfinder.bazaarscraper.BazaarScraper.*
 import io.circe.*
 import io.circe.parser.*
-import org.jsoup.Jsoup
 
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatterBuilder
-import java.util.Locale
-import scala.jdk.CollectionConverters.*
 
 object BazaarScraper {
   case class BazaarScraperError(message: String)
